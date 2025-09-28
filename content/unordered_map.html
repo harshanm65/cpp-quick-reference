@@ -1,0 +1,520 @@
+<div id="unordered_map-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::unordered_map In-Depth</h2>
+    <p class="mb-4 text-gray-400">A hash table that stores key-value pairs with fast O(1) average-case lookup, insertion, and deletion. It provides unordered storage with automatic load factor management and collision handling. Header: #include &lt;unordered_map&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Characteristics:</strong> O(1) average lookup/insertion/deletion, O(n) worst case (when all keys hash to same bucket), automatic rehashing when load factor exceeds threshold, no ordering guarantees.</p>
+
+    <div class="toc-container bg-gray-700 rounded-lg p-4 mb-6">
+        <h4 class="text-lg font-semibold text-cyan-300 mb-3">📋 Table of Contents</h4>
+        <ul class="space-y-2 text-sm">
+            <li><a href="#constructors" class="text-cyan-400 hover:text-cyan-200 transition-colors">Constructors</a></li>
+            <li><a href="#element-access" class="text-cyan-400 hover:text-cyan-200 transition-colors">Element Access & Modification</a></li>
+            <li><a href="#lookup-operations" class="text-cyan-400 hover:text-cyan-200 transition-colors">Lookup Operations</a></li>
+            <li><a href="#deletion-operations" class="text-cyan-400 hover:text-cyan-200 transition-colors">Deletion Operations</a></li>
+            <li><a href="#hash-table-properties" class="text-cyan-400 hover:text-cyan-200 transition-colors">Hash Table Properties</a></li>
+            <li><a href="#custom-hash-functions" class="text-cyan-400 hover:text-cyan-200 transition-colors">Custom Hash Functions</a></li>
+            <li><a href="#comparison" class="text-cyan-400 hover:text-cyan-200 transition-colors">vs map Comparison</a></li>
+            <li><a href="#common-patterns" class="text-cyan-400 hover:text-cyan-200 transition-colors">Common Patterns</a></li>
+        </ul>
+    </div>
+
+    <div class="space-y-12">
+        <div>
+            <h3 id="constructors" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                    <pre><code class="language-cpp">unordered_map();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty unordered_map with default bucket count and hash function.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;std::string, int&gt; map1; // Empty map</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(2) Bucket Count Constructor</h5>
+                    <pre><code class="language-cpp">explicit unordered_map( size_type bucket_count );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty unordered_map with at least the specified number of buckets.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;int, std::string&gt; map2(100); // At least 100 buckets</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(3) Range Constructor</h5>
+                    <pre><code class="language-cpp">template&lt; class InputIt &gt;
+unordered_map( InputIt first, InputIt last );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an unordered_map from a range of key-value pairs.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;std::pair&lt;int, std::string&gt;&gt; pairs = {{1, "one"}, {2, "two"}, {3, "three"}};
+std::unordered_map&lt;int, std::string&gt; map3(pairs.begin(), pairs.end());</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(4) Initializer List Constructor</h5>
+                    <pre><code class="language-cpp">unordered_map( std::initializer_list&lt;value_type&gt; init );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an unordered_map from an initializer list. (Since C++11)</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;std::string, int&gt; map4 = {
+    {"apple", 5},
+    {"banana", 3},
+    {"orange", 8}
+};</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(5) Copy &amp; Move Constructors</h5>
+                    <pre><code class="language-cpp">unordered_map( const unordered_map&amp; other );
+unordered_map( unordered_map&amp;&amp; other ) noexcept;</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an unordered_map by copying or moving another unordered_map.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;int, std::string&gt; original = {{1, "one"}, {2, "two"}};
+std::unordered_map&lt;int, std::string&gt; copy(original);      // Copy
+std::unordered_map&lt;int, std::string&gt; moved(std::move(original)); // Move</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="element-access" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Element Access &amp; Modification</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">operator[], at()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">`operator[]` inserts default value if key doesn't exist, while `at()` throws exception for missing keys.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;std::string, int&gt; scores = {{"Alice", 95}, {"Bob", 87}};
+
+// operator[] - creates entry if key doesn't exist
+int alice_score = scores["Alice"];    // 95
+int charlie_score = scores["Charlie"]; // 0 (default int value, key "Charlie" now exists)
+
+// at() - throws std::out_of_range if key doesn't exist
+try {
+    int dave_score = scores.at("Dave"); // Throws exception
+} catch (const std::out_of_range&amp; e) {
+    std::cout &lt;&lt; "Key not found!" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">insert(), emplace()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Insert elements into the map. `emplace` constructs the element in-place.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;std::string, int&gt; map;
+
+// insert() with pair
+auto result1 = map.insert({"key1", 100});
+std::cout &lt;&lt; "Inserted: " &lt;&lt; result1.second &lt;&lt; std::endl; // true
+
+// insert() again with same key
+auto result2 = map.insert({"key1", 200});
+std::cout &lt;&lt; "Inserted: " &lt;&lt; result2.second &lt;&lt; std::endl; // false (key already exists)
+
+// emplace() - constructs in-place
+map.emplace("key2", 300);
+
+// emplace() with forwarding
+map.emplace(std::piecewise_construct,
+           std::forward_as_tuple("key3"),
+           std::forward_as_tuple(400));</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">insert_or_assign(), try_emplace()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">C++17 additions for more precise insertion semantics.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;std::string, int&gt; map = {{"existing", 100}};
+
+// insert_or_assign - always updates the value
+auto [iter1, inserted1] = map.insert_or_assign("existing", 200); // Updates to 200
+auto [iter2, inserted2] = map.insert_or_assign("new_key", 300);  // Inserts new
+
+// try_emplace - only inserts if key doesn't exist (doesn't update)
+auto [iter3, inserted3] = map.try_emplace("existing", 400); // No change, inserted3 = false
+auto [iter4, inserted4] = map.try_emplace("another", 500);  // Inserts, inserted4 = true</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="lookup-operations" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Lookup Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">find(), count(), contains()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Various ways to check for key existence and retrieve elements.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;std::string, int&gt; map = {{"apple", 5}, {"banana", 3}};
+
+// find() returns iterator
+auto it = map.find("apple");
+if (it != map.end()) {
+    std::cout &lt;&lt; it-&gt;first &lt;&lt; ": " &lt;&lt; it-&gt;second &lt;&lt; std::endl; // "apple: 5"
+}
+
+// count() returns 0 or 1 for unordered_map
+if (map.count("orange") == 0) {
+    std::cout &lt;&lt; "Orange not found" &lt;&lt; std::endl;
+}
+
+// contains() - C++20 feature
+if (map.contains("banana")) { // C++20
+    std::cout &lt;&lt; "Banana found!" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">equal_range()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Returns a range containing all elements with the given key (useful for unordered_multimap).</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;std::string, int&gt; map = {{"key", 100}};
+
+auto range = map.equal_range("key");
+for (auto it = range.first; it != range.second; ++it) {
+    std::cout &lt;&lt; it-&gt;first &lt;&lt; ": " &lt;&lt; it-&gt;second &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="deletion-operations" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Deletion Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">erase()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Remove elements by key, iterator, or range.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;std::string, int&gt; map = {
+    {"one", 1}, {"two", 2}, {"three", 3}, {"four", 4}
+};
+
+// Erase by key
+size_t erased = map.erase("two"); // Returns number of elements removed (0 or 1)
+
+// Erase by iterator
+auto it = map.find("three");
+if (it != map.end()) {
+    map.erase(it);
+}
+
+// Erase by range
+auto start = map.find("one");
+auto end = map.find("four");
+if (start != map.end() &amp;&amp; end != map.end()) {
+    map.erase(start, ++end); // Erase range [start, end)
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">clear()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Remove all elements from the map.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;std::string, int&gt; map = {{"a", 1}, {"b", 2}};
+map.clear(); // Map is now empty
+std::cout &lt;&lt; "Size after clear: " &lt;&lt; map.size() &lt;&lt; std::endl; // 0</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="hash-table-properties" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Hash Table Properties</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Bucket Information</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Access internal hash table structure information.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;std::string, int&gt; map = {
+    {"apple", 1}, {"banana", 2}, {"cherry", 3}
+};
+
+std::cout &lt;&lt; "Bucket count: " &lt;&lt; map.bucket_count() &lt;&lt; std::endl;
+std::cout &lt;&lt; "Load factor: " &lt;&lt; map.load_factor() &lt;&lt; std::endl;
+std::cout &lt;&lt; "Max load factor: " &lt;&lt; map.max_load_factor() &lt;&lt; std::endl;
+
+// Find which bucket a key maps to
+std::cout &lt;&lt; "Bucket for 'apple': " &lt;&lt; map.bucket("apple") &lt;&lt; std::endl;
+
+// Iterate through buckets
+for (size_t i = 0; i &lt; map.bucket_count(); ++i) {
+    std::cout &lt;&lt; "Bucket " &lt;&lt; i &lt;&lt; " has " &lt;&lt; map.bucket_size(i) &lt;&lt; " elements" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Load Factor Management</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Control rehashing behavior for performance optimization.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_map&lt;int, std::string&gt; map;
+
+// Set max load factor (default is usually 1.0)
+map.max_load_factor(0.75f); // Rehash when load factor exceeds 0.75
+
+// Reserve space to avoid rehashing
+map.reserve(1000); // Reserves space for at least 1000 elements
+
+// Force rehashing
+map.rehash(50); // Ensure at least 50 buckets</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="custom-hash-functions" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Custom Hash Functions</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Using Custom Types as Keys</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Define hash functions and equality operators for custom types.</p>
+                    <pre class="ml-4"><code class="language-cpp">struct Point {
+    int x, y;
+
+    bool operator==(const Point&amp; other) const {
+        return x == other.x &amp;&amp; y == other.y;
+    }
+};
+
+// Custom hash function
+struct PointHash {
+    std::size_t operator()(const Point&amp; p) const {
+        return std::hash&lt;int&gt;{}(p.x) ^ (std::hash&lt;int&gt;{}(p.y) &lt;&lt; 1);
+    }
+};
+
+// Using custom hash
+std::unordered_map&lt;Point, std::string, PointHash&gt; point_map;
+point_map[{3, 4}] = "Point A";
+point_map[{1, 2}] = "Point B";</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Hash Function Templates</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Combining hashes for complex types using standard library utilities.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Generic hash combiner
+template&lt;typename T&gt;
+void hash_combine(std::size_t&amp; seed, const T&amp; val) {
+    seed ^= std::hash&lt;T&gt;{}(val) + 0x9e3779b9 + (seed &lt;&lt; 6) + (seed &gt;&gt; 2);
+}
+
+struct Person {
+    std::string name;
+    int age;
+
+    bool operator==(const Person&amp; other) const {
+        return name == other.name &amp;&amp; age == other.age;
+    }
+};
+
+struct PersonHash {
+    std::size_t operator()(const Person&amp; p) const {
+        std::size_t seed = 0;
+        hash_combine(seed, p.name);
+        hash_combine(seed, p.age);
+        return seed;
+    }
+};
+
+std::unordered_map&lt;Person, std::string, PersonHash&gt; person_map;</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 id="comparison" class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">unordered_map vs map Comparison</h3>
+    <div class="mb-6">
+        <table class="w-full border-collapse border border-gray-600">
+            <thead>
+                <tr class="bg-gray-700">
+                    <th class="border border-gray-600 px-4 py-2 text-cyan-300">Aspect</th>
+                    <th class="border border-gray-600 px-4 py-2 text-cyan-300">std::unordered_map</th>
+                    <th class="border border-gray-600 px-4 py-2 text-cyan-300">std::map</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-400">
+                <tr>
+                    <td class="border border-gray-600 px-4 py-2 font-semibold">Implementation</td>
+                    <td class="border border-gray-600 px-4 py-2">Hash table</td>
+                    <td class="border border-gray-600 px-4 py-2">Balanced binary tree (Red-Black)</td>
+                </tr>
+                <tr>
+                    <td class="border border-gray-600 px-4 py-2 font-semibold">Lookup Time</td>
+                    <td class="border border-gray-600 px-4 py-2">O(1) average, O(n) worst</td>
+                    <td class="border border-gray-600 px-4 py-2">O(log n)</td>
+                </tr>
+                <tr>
+                    <td class="border border-gray-600 px-4 py-2 font-semibold">Insertion Time</td>
+                    <td class="border border-gray-600 px-4 py-2">O(1) average, O(n) worst</td>
+                    <td class="border border-gray-600 px-4 py-2">O(log n)</td>
+                </tr>
+                <tr>
+                    <td class="border border-gray-600 px-4 py-2 font-semibold">Ordering</td>
+                    <td class="border border-gray-600 px-4 py-2">No ordering</td>
+                    <td class="border border-gray-600 px-4 py-2">Sorted by key</td>
+                </tr>
+                <tr>
+                    <td class="border border-gray-600 px-4 py-2 font-semibold">Memory Overhead</td>
+                    <td class="border border-gray-600 px-4 py-2">Higher (hash table + buckets)</td>
+                    <td class="border border-gray-600 px-4 py-2">Lower (only tree nodes)</td>
+                </tr>
+                <tr>
+                    <td class="border border-gray-600 px-4 py-2 font-semibold">Range Queries</td>
+                    <td class="border border-gray-600 px-4 py-2">Not supported</td>
+                    <td class="border border-gray-600 px-4 py-2">Efficient with iterators</td>
+                </tr>
+                <tr>
+                    <td class="border border-gray-600 px-4 py-2 font-semibold">Key Requirements</td>
+                    <td class="border border-gray-600 px-4 py-2">Hash function + equality</td>
+                    <td class="border border-gray-600 px-4 py-2">Comparison operator (&lt;)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3 id="common-patterns" class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">Common std::unordered_map Patterns</h3>
+    <div class="space-y-4">
+        <details>
+            <summary class="font-semibold text-lg">1. Frequency Counting</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Count occurrences of elements in a collection.</p>
+                <pre><code class="language-cpp">std::vector&lt;std::string&gt; words = {"apple", "banana", "apple", "orange", "banana", "apple"};
+std::unordered_map&lt;std::string, int&gt; frequency;
+
+for (const auto&amp; word : words) {
+    frequency[word]++; // Default constructs to 0, then increments
+}
+
+// Print frequencies
+for (const auto&amp; [word, count] : frequency) {
+    std::cout &lt;&lt; word &lt;&lt; ": " &lt;&lt; count &lt;&lt; std::endl;
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">2. Two Sum Problem</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Find two numbers in an array that add up to a target sum.</p>
+                <pre><code class="language-cpp">std::vector&lt;int&gt; twoSum(std::vector&lt;int&gt;&amp; nums, int target) {
+    std::unordered_map&lt;int, int&gt; num_to_index;
+
+    for (int i = 0; i &lt; nums.size(); ++i) {
+        int complement = target - nums[i];
+
+        auto it = num_to_index.find(complement);
+        if (it != num_to_index.end()) {
+            return {it-&gt;second, i}; // Found pair
+        }
+
+        num_to_index[nums[i]] = i;
+    }
+
+    return {}; // No solution found
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">3. Caching/Memoization</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Cache expensive function results to avoid recomputation.</p>
+                <pre><code class="language-cpp">class FibonacciCalculator {
+private:
+    mutable std::unordered_map&lt;int, long long&gt; cache;
+
+public:
+    long long fib(int n) const {
+        if (n &lt;= 1) return n;
+
+        auto it = cache.find(n);
+        if (it != cache.end()) {
+            return it-&gt;second; // Return cached result
+        }
+
+        // Compute and cache the result
+        long long result = fib(n - 1) + fib(n - 2);
+        cache[n] = result;
+        return result;
+    }
+};</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">4. Group Anagrams</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Group strings that are anagrams of each other.</p>
+                <pre><code class="language-cpp">std::vector&lt;std::vector&lt;std::string&gt;&gt; groupAnagrams(std::vector&lt;std::string&gt;&amp; strs) {
+    std::unordered_map&lt;std::string, std::vector&lt;std::string&gt;&gt; anagram_groups;
+
+    for (const std::string&amp; str : strs) {
+        std::string sorted_str = str;
+        std::sort(sorted_str.begin(), sorted_str.end());
+        anagram_groups[sorted_str].push_back(str);
+    }
+
+    std::vector&lt;std::vector&lt;std::string&gt;&gt; result;
+    for (const auto&amp; [key, group] : anagram_groups) {
+        result.push_back(group);
+    }
+
+    return result;
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">5. LRU Cache Implementation</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Implement a Least Recently Used cache using unordered_map and list.</p>
+                <pre><code class="language-cpp">template&lt;typename Key, typename Value&gt;
+class LRUCache {
+private:
+    int capacity;
+    std::list&lt;std::pair&lt;Key, Value&gt;&gt; cache_list;
+    std::unordered_map&lt;Key, typename std::list&lt;std::pair&lt;Key, Value&gt;&gt;::iterator&gt; cache_map;
+
+public:
+    LRUCache(int cap) : capacity(cap) {}
+
+    Value get(const Key&amp; key) {
+        auto it = cache_map.find(key);
+        if (it == cache_map.end()) {
+            throw std::runtime_error("Key not found");
+        }
+
+        // Move to front (most recently used)
+        cache_list.splice(cache_list.begin(), cache_list, it-&gt;second);
+        return it-&gt;second-&gt;second;
+    }
+
+    void put(const Key&amp; key, const Value&amp; value) {
+        auto it = cache_map.find(key);
+        if (it != cache_map.end()) {
+            // Update existing key
+            it-&gt;second-&gt;second = value;
+            cache_list.splice(cache_list.begin(), cache_list, it-&gt;second);
+            return;
+        }
+
+        // Add new key
+        if (cache_list.size() == capacity) {
+            // Remove least recently used
+            cache_map.erase(cache_list.back().first);
+            cache_list.pop_back();
+        }
+
+        cache_list.emplace_front(key, value);
+        cache_map[key] = cache_list.begin();
+    }
+};</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">6. Character Index Mapping</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Map characters to their indices for substring problems.</p>
+                <pre><code class="language-cpp">int lengthOfLongestSubstring(const std::string&amp; s) {
+    std::unordered_map&lt;char, int&gt; char_index;
+    int max_length = 0;
+    int start = 0;
+
+    for (int end = 0; end &lt; s.length(); ++end) {
+        char current_char = s[end];
+
+        // If character was seen before and is within current window
+        if (char_index.find(current_char) != char_index.end() &amp;&amp;
+            char_index[current_char] &gt;= start) {
+            start = char_index[current_char] + 1;
+        }
+
+        char_index[current_char] = end;
+        max_length = std::max(max_length, end - start + 1);
+    }
+
+    return max_length;
+}</code></pre>
+            </div>
+        </details>
+    </div>
+</div>

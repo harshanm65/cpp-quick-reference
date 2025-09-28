@@ -1,0 +1,1223 @@
+<div id="coroutines-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">Coroutines In-Depth (C++20)</h2>
+    <p class="mb-4 text-gray-400">C++20 introduces coroutines - functions that can suspend execution and resume later. This enables cooperative multitasking, asynchronous programming, and generators without blocking threads. Coroutines provide a powerful way to write asynchronous code that looks synchronous. Header: #include &lt;coroutine&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Benefits:</strong> Simplified asynchronous code, efficient cooperative multitasking, stackless design, composable async operations, and improved readability over callback-based code.</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Basic Coroutine Concepts</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Coroutine Fundamentals</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Understanding the basic building blocks: co_await, co_yield, and co_return.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;coroutine&gt;
+#include &lt;iostream&gt;
+#include &lt;exception&gt;
+
+// Simple task type for basic coroutines
+struct Task {
+    struct promise_type {
+        Task get_return_object() {
+            return Task{std::coroutine_handle&lt;promise_type&gt;::from_promise(*this)};
+        }
+
+        std::suspend_never initial_suspend() { return {}; }
+        std::suspend_never final_suspend() noexcept { return {}; }
+
+        void return_void() {}
+
+        void unhandled_exception() {
+            std::terminate();
+        }
+    };
+
+    std::coroutine_handle&lt;promise_type&gt; coro;
+
+    Task(std::coroutine_handle&lt;promise_type&gt; h) : coro(h) {}
+
+    ~Task() {
+        if (coro) {
+            coro.destroy();
+        }
+    }
+
+    // Non-copyable, movable
+    Task(const Task&) = delete;
+    Task& operator=(const Task&) = delete;
+
+    Task(Task&& other) noexcept : coro(other.coro) {
+        other.coro = {};
+    }
+
+    Task& operator=(Task&& other) noexcept {
+        if (this != &other) {
+            if (coro) {
+                coro.destroy();
+            }
+            coro = other.coro;
+            other.coro = {};
+        }
+        return *this;
+    }
+};
+
+// Basic coroutine example
+Task simple_coroutine() {
+    std::cout &lt;&lt; "Coroutine started" &lt;&lt; std::endl;
+
+    // This is where the magic happens - coroutine can suspend
+    co_await std::suspend_always{};
+
+    std::cout &lt;&lt; "Coroutine resumed" &lt;&lt; std::endl;
+    co_return; // End the coroutine
+}
+
+// Demonstrating coroutine lifecycle
+void basic_coroutine_example() {
+    std::cout &lt;&lt; "Creating coroutine" &lt;&lt; std::endl;
+    auto task = simple_coroutine();
+
+    std::cout &lt;&lt; "Coroutine created, checking if done: "
+              &lt;&lt; task.coro.done() &lt;&lt; std::endl;
+
+    std::cout &lt;&lt; "Resuming coroutine" &lt;&lt; std::endl;
+    task.coro.resume();
+
+    std::cout &lt;&lt; "Checking if done: " &lt;&lt; task.coro.done() &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Awaitable Objects and Customization</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Creating custom awaitable types to control suspension behavior.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;chrono&gt;
+#include &lt;thread&gt;
+
+// Custom awaitable that sleeps for a duration
+struct SleepAwaitable {
+    std::chrono::milliseconds duration;
+
+    SleepAwaitable(std::chrono::milliseconds ms) : duration(ms) {}
+
+    bool await_ready() const {
+        // Never ready immediately - always suspend
+        return false;
+    }
+
+    void await_suspend(std::coroutine_handle&lt;&gt; handle) {
+        // This could launch a timer in a real async system
+        // For demo, we'll just sleep the current thread
+        std::thread([handle, duration = this-&gt;duration]() {
+            std::this_thread::sleep_for(duration);
+            handle.resume();
+        }).detach();
+    }
+
+    void await_resume() {
+        // Nothing to return when resumed
+        std::cout &lt;&lt; "Sleep completed!" &lt;&lt; std::endl;
+    }
+};
+
+// Convenience function to create sleep awaitable
+SleepAwaitable sleep_for(std::chrono::milliseconds ms) {
+    return SleepAwaitable{ms};
+}
+
+// Coroutine using custom awaitable
+Task async_operations() {
+    std::cout &lt;&lt; "Starting async operations..." &lt;&lt; std::endl;
+
+    co_await sleep_for(std::chrono::milliseconds(500));
+    std::cout &lt;&lt; "First operation completed" &lt;&lt; std::endl;
+
+    co_await sleep_for(std::chrono::milliseconds(300));
+    std::cout &lt;&lt; "Second operation completed" &lt;&lt; std::endl;
+
+    co_await sleep_for(std::chrono::milliseconds(200));
+    std::cout &lt;&lt; "All operations completed!" &lt;&lt; std::endl;
+}
+
+// Conditional awaitable
+struct ConditionalAwaitable {
+    bool should_suspend;
+
+    ConditionalAwaitable(bool suspend) : should_suspend(suspend) {}
+
+    bool await_ready() const {
+        return !should_suspend; // Ready if we shouldn't suspend
+    }
+
+    void await_suspend(std::coroutine_handle&lt;&gt; handle) {
+        // In a real system, this might queue the coroutine for later
+        std::cout &lt;&lt; "Suspending..." &lt;&lt; std::endl;
+        std::thread([handle]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::cout &lt;&lt; "Resuming..." &lt;&lt; std::endl;
+            handle.resume();
+        }).detach();
+    }
+
+    void await_resume() {
+        std::cout &lt;&lt; "Resumed from conditional await" &lt;&lt; std::endl;
+    }
+};
+
+Task conditional_example() {
+    std::cout &lt;&lt; "Testing conditional awaitable" &lt;&lt; std::endl;
+
+    // This won't suspend
+    co_await ConditionalAwaitable{false};
+    std::cout &lt;&lt; "Didn't suspend" &lt;&lt; std::endl;
+
+    // This will suspend
+    co_await ConditionalAwaitable{true};
+    std::cout &lt;&lt; "Did suspend and resume" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Generators with co_yield</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Basic Generator Implementation</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Creating generators using co_yield for lazy evaluation and sequence generation.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Generator class template
+template&lt;typename T&gt;
+struct Generator {
+    struct promise_type {
+        T current_value;
+
+        Generator get_return_object() {
+            return Generator{std::coroutine_handle&lt;promise_type&gt;::from_promise(*this)};
+        }
+
+        std::suspend_always initial_suspend() { return {}; }
+        std::suspend_always final_suspend() noexcept { return {}; }
+
+        std::suspend_always yield_value(T value) {
+            current_value = value;
+            return {};
+        }
+
+        void return_void() {}
+
+        void unhandled_exception() {
+            std::terminate();
+        }
+    };
+
+    std::coroutine_handle&lt;promise_type&gt; coro;
+
+    explicit Generator(std::coroutine_handle&lt;promise_type&gt; h) : coro(h) {}
+
+    ~Generator() {
+        if (coro) {
+            coro.destroy();
+        }
+    }
+
+    // Non-copyable, movable
+    Generator(const Generator&) = delete;
+    Generator& operator=(const Generator&) = delete;
+
+    Generator(Generator&& other) noexcept : coro(other.coro) {
+        other.coro = {};
+    }
+
+    Generator& operator=(Generator&& other) noexcept {
+        if (this != &other) {
+            if (coro) {
+                coro.destroy();
+            }
+            coro = other.coro;
+            other.coro = {};
+        }
+        return *this;
+    }
+
+    // Iterator interface
+    struct iterator {
+        std::coroutine_handle&lt;promise_type&gt; coro;
+        bool done;
+
+        iterator(std::coroutine_handle&lt;promise_type&gt; h, bool is_done)
+            : coro(h), done(is_done) {
+            if (!done) {
+                coro.resume();
+                done = coro.done();
+            }
+        }
+
+        const T& operator*() const {
+            return coro.promise().current_value;
+        }
+
+        iterator& operator++() {
+            coro.resume();
+            done = coro.done();
+            return *this;
+        }
+
+        bool operator==(const iterator& other) const {
+            return done == other.done;
+        }
+
+        bool operator!=(const iterator& other) const {
+            return !(*this == other);
+        }
+    };
+
+    iterator begin() {
+        return iterator{coro, false};
+    }
+
+    iterator end() {
+        return iterator{coro, true};
+    }
+};
+
+// Simple number generator
+Generator&lt;int&gt; numbers(int start, int end) {
+    for (int i = start; i &lt; end; ++i) {
+        co_yield i;
+    }
+}
+
+// Fibonacci generator
+Generator&lt;long long&gt; fibonacci() {
+    long long a = 0, b = 1;
+    while (true) {
+        co_yield a;
+        auto next = a + b;
+        a = b;
+        b = next;
+    }
+}
+
+// Generator with filtering
+Generator&lt;int&gt; even_numbers(int start, int count) {
+    int current = start;
+    int generated = 0;
+
+    while (generated &lt; count) {
+        if (current % 2 == 0) {
+            co_yield current;
+            ++generated;
+        }
+        ++current;
+    }
+}
+
+void generator_examples() {
+    std::cout &lt;&lt; "Numbers 1-5: ";
+    for (auto num : numbers(1, 6)) {
+        std::cout &lt;&lt; num &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+
+    std::cout &lt;&lt; "First 10 Fibonacci numbers: ";
+    int count = 0;
+    for (auto fib : fibonacci()) {
+        if (count++ >= 10) break;
+        std::cout &lt;&lt; fib &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+
+    std::cout &lt;&lt; "First 5 even numbers starting from 1: ";
+    for (auto even : even_numbers(1, 5)) {
+        std::cout &lt;&lt; even &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Advanced Generator Patterns</h5>
+                    <p class="text-gray-400 mt-2 mb-3">More sophisticated generator use cases including recursive generators and composition.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Tree traversal generator
+struct TreeNode {
+    int value;
+    std::unique_ptr&lt;TreeNode&gt; left;
+    std::unique_ptr&lt;TreeNode&gt; right;
+
+    TreeNode(int val) : value(val) {}
+
+    TreeNode(int val, std::unique_ptr&lt;TreeNode&gt; l, std::unique_ptr&lt;TreeNode&gt; r)
+        : value(val), left(std::move(l)), right(std::move(r)) {}
+};
+
+// Recursive generator for tree traversal
+Generator&lt;int&gt; inorder_traversal(const TreeNode* node) {
+    if (!node) {
+        co_return;
+    }
+
+    // Traverse left subtree
+    for (auto value : inorder_traversal(node-&gt;left.get())) {
+        co_yield value;
+    }
+
+    // Visit current node
+    co_yield node-&gt;value;
+
+    // Traverse right subtree
+    for (auto value : inorder_traversal(node-&gt;right.get())) {
+        co_yield value;
+    }
+}
+
+// Generator that transforms another generator
+template&lt;typename T, typename Func&gt;
+Generator&lt;auto&gt; transform(Generator&lt;T&gt;&& input, Func func) {
+    for (auto&& value : input) {
+        co_yield func(value);
+    }
+}
+
+// Generator that filters another generator
+template&lt;typename T, typename Predicate&gt;
+Generator&lt;T&gt; filter(Generator&lt;T&gt;&& input, Predicate pred) {
+    for (auto&& value : input) {
+        if (pred(value)) {
+            co_yield value;
+        }
+    }
+}
+
+// Generator that takes first N elements
+template&lt;typename T&gt;
+Generator&lt;T&gt; take(Generator&lt;T&gt;&& input, size_t count) {
+    size_t taken = 0;
+    for (auto&& value : input) {
+        if (taken++ >= count) break;
+        co_yield value;
+    }
+}
+
+// String tokenizer generator
+Generator&lt;std::string&gt; tokenize(const std::string& text, char delimiter) {
+    std::string token;
+    for (char c : text) {
+        if (c == delimiter) {
+            if (!token.empty()) {
+                co_yield token;
+                token.clear();
+            }
+        } else {
+            token += c;
+        }
+    }
+    if (!token.empty()) {
+        co_yield token;
+    }
+}
+
+void advanced_generator_examples() {
+    // Tree traversal
+    auto root = std::make_unique&lt;TreeNode&gt;(
+        4,
+        std::make_unique&lt;TreeNode&gt;(
+            2,
+            std::make_unique&lt;TreeNode&gt;(1),
+            std::make_unique&lt;TreeNode&gt;(3)
+        ),
+        std::make_unique&lt;TreeNode&gt;(
+            6,
+            std::make_unique&lt;TreeNode&gt;(5),
+            std::make_unique&lt;TreeNode&gt;(7)
+        )
+    );
+
+    std::cout &lt;&lt; "Inorder traversal: ";
+    for (auto value : inorder_traversal(root.get())) {
+        std::cout &lt;&lt; value &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+
+    // Generator composition
+    std::cout &lt;&lt; "First 5 even squares: ";
+    auto squares = transform(numbers(1, 20), [](int x) { return x * x; });
+    auto even_squares = filter(std::move(squares), [](int x) { return x % 2 == 0; });
+    auto first_five = take(std::move(even_squares), 5);
+
+    for (auto value : first_five) {
+        std::cout &lt;&lt; value &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+
+    // String tokenization
+    std::cout &lt;&lt; "Tokens: ";
+    for (auto token : tokenize("hello,world,how,are,you", ',')) {
+        std::cout &lt;&lt; "'" &lt;&lt; token &lt;&lt; "' ";
+    }
+    std::cout &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Asynchronous Programming</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Future-like Coroutines</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Implementing async/await patterns with return values.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;future&gt;
+#include &lt;optional&gt;
+
+// Future-like coroutine that can return values
+template&lt;typename T&gt;
+struct Future {
+    struct promise_type {
+        std::optional&lt;T&gt; value;
+        std::exception_ptr exception;
+
+        Future get_return_object() {
+            return Future{std::coroutine_handle&lt;promise_type&gt;::from_promise(*this)};
+        }
+
+        std::suspend_never initial_suspend() { return {}; }
+        std::suspend_always final_suspend() noexcept { return {}; }
+
+        void return_value(T val) {
+            value = std::move(val);
+        }
+
+        void unhandled_exception() {
+            exception = std::current_exception();
+        }
+    };
+
+    std::coroutine_handle&lt;promise_type&gt; coro;
+
+    explicit Future(std::coroutine_handle&lt;promise_type&gt; h) : coro(h) {}
+
+    ~Future() {
+        if (coro) {
+            coro.destroy();
+        }
+    }
+
+    // Non-copyable, movable
+    Future(const Future&) = delete;
+    Future& operator=(const Future&) = delete;
+
+    Future(Future&& other) noexcept : coro(other.coro) {
+        other.coro = {};
+    }
+
+    Future& operator=(Future&& other) noexcept {
+        if (this != &other) {
+            if (coro) {
+                coro.destroy();
+            }
+            coro = other.coro;
+            other.coro = {};
+        }
+        return *this;
+    }
+
+    T get() {
+        if (!coro.done()) {
+            // In a real implementation, this would block or use an event loop
+            while (!coro.done()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+        }
+
+        if (coro.promise().exception) {
+            std::rethrow_exception(coro.promise().exception);
+        }
+
+        return *coro.promise().value;
+    }
+
+    bool ready() const {
+        return coro.done();
+    }
+
+    // Awaitable interface
+    bool await_ready() const {
+        return coro.done();
+    }
+
+    void await_suspend(std::coroutine_handle&lt;&gt; awaiting_coro) {
+        // In a real async system, this would set up a continuation
+        std::thread([this, awaiting_coro]() {
+            while (!coro.done()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            awaiting_coro.resume();
+        }).detach();
+    }
+
+    T await_resume() {
+        return get();
+    }
+};
+
+// Async function that returns a Future
+Future&lt;int&gt; async_calculation(int x, int y) {
+    std::cout &lt;&lt; "Starting async calculation..." &lt;&lt; std::endl;
+
+    // Simulate async work
+    co_await sleep_for(std::chrono::milliseconds(200));
+
+    int result = x * y + 10;
+    std::cout &lt;&lt; "Calculation completed: " &lt;&lt; result &lt;&lt; std::endl;
+
+    co_return result;
+}
+
+// Async function that calls other async functions
+Future&lt;std::string&gt; async_processing() {
+    std::cout &lt;&lt; "Starting async processing..." &lt;&lt; std::endl;
+
+    auto result1 = co_await async_calculation(5, 6);
+    auto result2 = co_await async_calculation(result1, 2);
+
+    std::string final_result = "Final result: " + std::to_string(result2);
+    co_return final_result;
+}
+
+// HTTP request simulation
+struct HttpResponse {
+    int status_code;
+    std::string body;
+};
+
+Future&lt;HttpResponse&gt; http_get(const std::string& url) {
+    std::cout &lt;&lt; "Fetching " &lt;&lt; url &lt;&lt; "..." &lt;&lt; std::endl;
+
+    // Simulate network delay
+    co_await sleep_for(std::chrono::milliseconds(300));
+
+    // Simulate response
+    HttpResponse response;
+    response.status_code = 200;
+    response.body = "Response from " + url;
+
+    std::cout &lt;&lt; "Received response from " &lt;&lt; url &lt;&lt; std::endl;
+    co_return response;
+}
+
+Future&lt;std::vector&lt;HttpResponse&gt;&gt; fetch_multiple_urls() {
+    std::vector&lt;std::string&gt; urls = {
+        "https://api.example.com/data1",
+        "https://api.example.com/data2",
+        "https://api.example.com/data3"
+    };
+
+    std::vector&lt;HttpResponse&gt; responses;
+
+    for (const auto& url : urls) {
+        auto response = co_await http_get(url);
+        responses.push_back(response);
+    }
+
+    co_return responses;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Parallel Async Operations</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Combining coroutines with parallel execution patterns.</p>
+                    <pre class="ml-4"><code class="language-cpp">// When-all combinator for parallel execution
+template&lt;typename... Futures&gt;
+Future&lt;std::tuple&lt;typename Futures::type...&gt;&gt; when_all(Futures&&... futures) {
+    // In a real implementation, this would run all futures concurrently
+    co_return std::make_tuple(co_await futures...);
+}
+
+// Specialized version for same-type futures
+template&lt;typename T&gt;
+Future&lt;std::vector&lt;T&gt;&gt; when_all_vector(std::vector&lt;Future&lt;T&gt;&gt; futures) {
+    std::vector&lt;T&gt; results;
+    results.reserve(futures.size());
+
+    // Sequential await (in real implementation, would be parallel)
+    for (auto& future : futures) {
+        results.push_back(co_await future);
+    }
+
+    co_return results;
+}
+
+// Timeout wrapper
+template&lt;typename T&gt;
+Future&lt;std::optional&lt;T&gt;&gt; with_timeout(Future&lt;T&gt; future, std::chrono::milliseconds timeout) {
+    // Simulate timeout logic
+    auto start = std::chrono::steady_clock::now();
+
+    while (!future.ready()) {
+        if (std::chrono::steady_clock::now() - start &gt; timeout) {
+            std::cout &lt;&lt; "Operation timed out!" &lt;&lt; std::endl;
+            co_return std::nullopt;
+        }
+        co_await sleep_for(std::chrono::milliseconds(10));
+    }
+
+    co_return co_await future;
+}
+
+// Error handling in async contexts
+Future&lt;int&gt; risky_operation(bool should_fail) {
+    co_await sleep_for(std::chrono::milliseconds(100));
+
+    if (should_fail) {
+        throw std::runtime_error("Operation failed!");
+    }
+
+    co_return 42;
+}
+
+Future&lt;std::string&gt; error_handling_example() {
+    try {
+        auto result1 = co_await risky_operation(false);
+        std::cout &lt;&lt; "First operation succeeded: " &lt;&lt; result1 &lt;&lt; std::endl;
+
+        auto result2 = co_await risky_operation(true);
+        std::cout &lt;&lt; "Second operation succeeded: " &lt;&lt; result2 &lt;&lt; std::endl;
+
+        co_return "All operations completed successfully";
+    } catch (const std::exception& e) {
+        std::cout &lt;&lt; "Caught exception: " &lt;&lt; e.what() &lt;&lt; std::endl;
+        co_return "Operation failed: " + std::string(e.what());
+    }
+}
+
+void async_examples() {
+    std::cout &lt;&lt; "=== Basic Async Example ===" &lt;&lt; std::endl;
+    auto future1 = async_processing();
+    auto result1 = future1.get();
+    std::cout &lt;&lt; result1 &lt;&lt; std::endl;
+
+    std::cout &lt;&lt; "\n=== Multiple HTTP Requests ===" &lt;&lt; std::endl;
+    auto http_future = fetch_multiple_urls();
+    auto responses = http_future.get();
+    for (const auto& response : responses) {
+        std::cout &lt;&lt; "Status: " &lt;&lt; response.status_code
+                  &lt;&lt; ", Body: " &lt;&lt; response.body &lt;&lt; std::endl;
+    }
+
+    std::cout &lt;&lt; "\n=== Error Handling ===" &lt;&lt; std::endl;
+    auto error_future = error_handling_example();
+    auto error_result = error_future.get();
+    std::cout &lt;&lt; error_result &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Advanced Coroutine Patterns</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Coroutine Scheduler</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Building a simple cooperative scheduler for coroutines.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;queue&gt;
+#include &lt;memory&gt;
+
+// Simple coroutine scheduler
+class Scheduler {
+private:
+    std::queue&lt;std::coroutine_handle&lt;&gt;&gt; ready_queue;
+
+public:
+    static Scheduler& instance() {
+        static Scheduler scheduler;
+        return scheduler;
+    }
+
+    void schedule(std::coroutine_handle&lt;&gt; coro) {
+        ready_queue.push(coro);
+    }
+
+    void run() {
+        while (!ready_queue.empty()) {
+            auto coro = ready_queue.front();
+            ready_queue.pop();
+
+            if (!coro.done()) {
+                coro.resume();
+            }
+        }
+    }
+
+    bool has_work() const {
+        return !ready_queue.empty();
+    }
+};
+
+// Scheduled task type
+struct ScheduledTask {
+    struct promise_type {
+        ScheduledTask get_return_object() {
+            return ScheduledTask{std::coroutine_handle&lt;promise_type&gt;::from_promise(*this)};
+        }
+
+        std::suspend_never initial_suspend() { return {}; }
+        std::suspend_never final_suspend() noexcept { return {}; }
+
+        void return_void() {}
+
+        void unhandled_exception() {
+            std::terminate();
+        }
+    };
+
+    std::coroutine_handle&lt;promise_type&gt; coro;
+
+    ScheduledTask(std::coroutine_handle&lt;promise_type&gt; h) : coro(h) {}
+
+    ~ScheduledTask() {
+        if (coro) {
+            coro.destroy();
+        }
+    }
+
+    // Non-copyable, movable
+    ScheduledTask(const ScheduledTask&) = delete;
+    ScheduledTask& operator=(const ScheduledTask&) = delete;
+
+    ScheduledTask(ScheduledTask&& other) noexcept : coro(other.coro) {
+        other.coro = {};
+    }
+
+    ScheduledTask& operator=(ScheduledTask&& other) noexcept {
+        if (this != &other) {
+            if (coro) {
+                coro.destroy();
+            }
+            coro = other.coro;
+            other.coro = {};
+        }
+        return *this;
+    }
+};
+
+// Yield to scheduler
+struct YieldAwaitable {
+    bool await_ready() const { return false; }
+
+    void await_suspend(std::coroutine_handle&lt;&gt; handle) {
+        Scheduler::instance().schedule(handle);
+    }
+
+    void await_resume() {}
+};
+
+YieldAwaitable yield() {
+    return {};
+}
+
+// Example coroutines for the scheduler
+ScheduledTask worker_coroutine(int id, int work_count) {
+    for (int i = 0; i &lt; work_count; ++i) {
+        std::cout &lt;&lt; "Worker " &lt;&lt; id &lt;&lt; " doing work " &lt;&lt; i &lt;&lt; std::endl;
+        co_await yield(); // Yield control to other coroutines
+    }
+    std::cout &lt;&lt; "Worker " &lt;&lt; id &lt;&lt; " finished" &lt;&lt; std::endl;
+}
+
+void scheduler_example() {
+    std::cout &lt;&lt; "=== Scheduler Example ===" &lt;&lt; std::endl;
+
+    // Create multiple worker coroutines
+    auto worker1 = worker_coroutine(1, 3);
+    auto worker2 = worker_coroutine(2, 3);
+    auto worker3 = worker_coroutine(3, 3);
+
+    // Run the scheduler
+    Scheduler::instance().run();
+
+    std::cout &lt;&lt; "All workers completed" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Async Channel Communication</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Producer-consumer pattern using coroutines and channels.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;optional&gt;
+
+// Simple unbounded channel for coroutine communication
+template&lt;typename T&gt;
+class Channel {
+private:
+    std::queue&lt;T&gt; buffer;
+    std::queue&lt;std::coroutine_handle&lt;&gt;&gt; waiting_receivers;
+    std::mutex mutex;
+    bool closed = false;
+
+public:
+    struct SendAwaitable {
+        Channel* channel;
+        T value;
+
+        bool await_ready() const {
+            return false; // Always suspend to check the channel state
+        }
+
+        void await_suspend(std::coroutine_handle&lt;&gt; handle) {
+            std::lock_guard&lt;std::mutex&gt; lock(channel-&gt;mutex);
+
+            // Add value to buffer
+            channel-&gt;buffer.push(std::move(value));
+
+            // Wake up any waiting receivers
+            if (!channel-&gt;waiting_receivers.empty()) {
+                auto receiver = channel-&gt;waiting_receivers.front();
+                channel-&gt;waiting_receivers.pop();
+                Scheduler::instance().schedule(receiver);
+            }
+
+            // Resume sender immediately
+            Scheduler::instance().schedule(handle);
+        }
+
+        void await_resume() {}
+    };
+
+    struct ReceiveAwaitable {
+        Channel* channel;
+
+        bool await_ready() const {
+            std::lock_guard&lt;std::mutex&gt; lock(channel-&gt;mutex);
+            return !channel-&gt;buffer.empty() || channel-&gt;closed;
+        }
+
+        void await_suspend(std::coroutine_handle&lt;&gt; handle) {
+            std::lock_guard&lt;std::mutex&gt; lock(channel-&gt;mutex);
+
+            if (!channel-&gt;buffer.empty() || channel-&gt;closed) {
+                // Data available or channel closed, resume immediately
+                Scheduler::instance().schedule(handle);
+            } else {
+                // No data, wait for sender
+                channel-&gt;waiting_receivers.push(handle);
+            }
+        }
+
+        std::optional&lt;T&gt; await_resume() {
+            std::lock_guard&lt;std::mutex&gt; lock(channel-&gt;mutex);
+
+            if (!channel-&gt;buffer.empty()) {
+                T value = std::move(channel-&gt;buffer.front());
+                channel-&gt;buffer.pop();
+                return value;
+            }
+
+            return std::nullopt; // Channel closed
+        }
+    };
+
+    SendAwaitable send(T value) {
+        return SendAwaitable{this, std::move(value)};
+    }
+
+    ReceiveAwaitable receive() {
+        return ReceiveAwaitable{this};
+    }
+
+    void close() {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex);
+        closed = true;
+
+        // Wake up all waiting receivers
+        while (!waiting_receivers.empty()) {
+            auto receiver = waiting_receivers.front();
+            waiting_receivers.pop();
+            Scheduler::instance().schedule(receiver);
+        }
+    }
+
+    bool is_closed() const {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex);
+        return closed;
+    }
+};
+
+// Producer coroutine
+ScheduledTask producer(Channel&lt;int&gt;& channel, int count) {
+    for (int i = 0; i &lt; count; ++i) {
+        std::cout &lt;&lt; "Producing " &lt;&lt; i &lt;&lt; std::endl;
+        co_await channel.send(i);
+        co_await yield(); // Allow other coroutines to run
+    }
+
+    std::cout &lt;&lt; "Producer finished, closing channel" &lt;&lt; std::endl;
+    channel.close();
+}
+
+// Consumer coroutine
+ScheduledTask consumer(Channel&lt;int&gt;& channel, int id) {
+    while (!channel.is_closed()) {
+        auto value = co_await channel.receive();
+
+        if (value) {
+            std::cout &lt;&lt; "Consumer " &lt;&lt; id &lt;&lt; " received " &lt;&lt; *value &lt;&lt; std::endl;
+        } else {
+            std::cout &lt;&lt; "Consumer " &lt;&lt; id &lt;&lt; " detected channel closure" &lt;&lt; std::endl;
+            break;
+        }
+
+        co_await yield();
+    }
+
+    std::cout &lt;&lt; "Consumer " &lt;&lt; id &lt;&lt; " finished" &lt;&lt; std::endl;
+}
+
+void channel_example() {
+    std::cout &lt;&lt; "=== Channel Communication Example ===" &lt;&lt; std::endl;
+
+    Channel&lt;int&gt; channel;
+
+    // Create producer and consumers
+    auto prod = producer(channel, 5);
+    auto cons1 = consumer(channel, 1);
+    auto cons2 = consumer(channel, 2);
+
+    // Run all coroutines
+    Scheduler::instance().run();
+
+    std::cout &lt;&lt; "Channel example completed" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Real-World Applications</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Async File I/O Simulation</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Simulating asynchronous file operations with coroutines.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;fstream&gt;
+#include &lt;vector&gt;
+
+// Async file operations
+struct FileContent {
+    std::string filename;
+    std::string content;
+    bool success;
+};
+
+Future&lt;FileContent&gt; async_read_file(const std::string& filename) {
+    std::cout &lt;&lt; "Starting to read " &lt;&lt; filename &lt;&lt; std::endl;
+
+    // Simulate I/O delay
+    co_await sleep_for(std::chrono::milliseconds(100));
+
+    FileContent result;
+    result.filename = filename;
+
+    // Simulate file reading (in real implementation, would use actual async I/O)
+    if (filename == "existing_file.txt") {
+        result.content = "This is the content of " + filename;
+        result.success = true;
+    } else {
+        result.content = "";
+        result.success = false;
+    }
+
+    std::cout &lt;&lt; "Finished reading " &lt;&lt; filename &lt;&lt; std::endl;
+    co_return result;
+}
+
+Future&lt;bool&gt; async_write_file(const std::string& filename, const std::string& content) {
+    std::cout &lt;&lt; "Starting to write " &lt;&lt; filename &lt;&lt; std::endl;
+
+    // Simulate I/O delay
+    co_await sleep_for(std::chrono::milliseconds(150));
+
+    // Simulate file writing
+    std::cout &lt;&lt; "Writing " &lt;&lt; content.length() &lt;&lt; " bytes to " &lt;&lt; filename &lt;&lt; std::endl;
+
+    std::cout &lt;&lt; "Finished writing " &lt;&lt; filename &lt;&lt; std::endl;
+    co_return true;
+}
+
+// File processing pipeline
+Future&lt;std::string&gt; process_files(const std::vector&lt;std::string&gt;& filenames) {
+    std::string combined_content;
+
+    for (const auto& filename : filenames) {
+        auto file_content = co_await async_read_file(filename);
+
+        if (file_content.success) {
+            combined_content += file_content.content + "\n";
+        } else {
+            std::cout &lt;&lt; "Warning: Could not read " &lt;&lt; filename &lt;&lt; std::endl;
+        }
+    }
+
+    // Write combined content to output file
+    if (!combined_content.empty()) {
+        bool write_success = co_await async_write_file("output.txt", combined_content);
+        if (write_success) {
+            co_return "Successfully processed " + std::to_string(filenames.size()) + " files";
+        } else {
+            co_return "Failed to write output file";
+        }
+    } else {
+        co_return "No files were successfully read";
+    }
+}
+
+void file_processing_example() {
+    std::cout &lt;&lt; "=== Async File Processing Example ===" &lt;&lt; std::endl;
+
+    std::vector&lt;std::string&gt; files_to_process = {
+        "existing_file.txt",
+        "another_file.txt",
+        "missing_file.txt"
+    };
+
+    auto processing_future = process_files(files_to_process);
+    auto result = processing_future.get();
+
+    std::cout &lt;&lt; "Processing result: " &lt;&lt; result &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Web Server Request Handler</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Simulating a web server that handles requests asynchronously.</p>
+                    <pre class="ml-4"><code class="language-cpp">// HTTP request/response structures
+struct HttpRequest {
+    std::string method;
+    std::string path;
+    std::map&lt;std::string, std::string&gt; headers;
+    std::string body;
+};
+
+struct HttpResponseData {
+    int status_code;
+    std::map&lt;std::string, std::string&gt; headers;
+    std::string body;
+};
+
+// Database simulation
+Future&lt;std::string&gt; query_database(const std::string& query) {
+    std::cout &lt;&lt; "Executing database query: " &lt;&lt; query &lt;&lt; std::endl;
+
+    // Simulate database delay
+    co_await sleep_for(std::chrono::milliseconds(200));
+
+    // Simulate query result
+    if (query.find("SELECT") != std::string::npos) {
+        co_return R"({"users": [{"id": 1, "name": "John"}, {"id": 2, "name": "Jane"}]})";
+    } else {
+        co_return R"({"success": true})";
+    }
+}
+
+// Cache simulation
+Future&lt;std::optional&lt;std::string&gt;&gt; check_cache(const std::string& key) {
+    std::cout &lt;&lt; "Checking cache for key: " &lt;&lt; key &lt;&lt; std::endl;
+
+    // Simulate cache lookup delay
+    co_await sleep_for(std::chrono::milliseconds(50));
+
+    // Simulate cache miss for demo
+    co_return std::nullopt;
+}
+
+// Request handler
+Future&lt;HttpResponseData&gt; handle_request(const HttpRequest& request) {
+    std::cout &lt;&lt; "Handling " &lt;&lt; request.method &lt;&lt; " " &lt;&lt; request.path &lt;&lt; std::endl;
+
+    HttpResponseData response;
+    response.headers["Content-Type"] = "application/json";
+
+    if (request.path == "/users") {
+        // Check cache first
+        auto cached_result = co_await check_cache("users_list");
+
+        if (cached_result) {
+            std::cout &lt;&lt; "Cache hit!" &lt;&lt; std::endl;
+            response.status_code = 200;
+            response.body = *cached_result;
+        } else {
+            std::cout &lt;&lt; "Cache miss, querying database" &lt;&lt; std::endl;
+            auto db_result = co_await query_database("SELECT * FROM users");
+
+            response.status_code = 200;
+            response.body = db_result;
+        }
+    } else if (request.path == "/health") {
+        response.status_code = 200;
+        response.body = R"({"status": "healthy"})";
+    } else {
+        response.status_code = 404;
+        response.body = R"({"error": "Not found"})";
+    }
+
+    std::cout &lt;&lt; "Request handled with status " &lt;&lt; response.status_code &lt;&lt; std::endl;
+    co_return response;
+}
+
+// Simulate multiple concurrent requests
+Future&lt;void&gt; simulate_server() {
+    std::vector&lt;HttpRequest&gt; requests = {
+        {"GET", "/users", {}, ""},
+        {"GET", "/health", {}, ""},
+        {"GET", "/nonexistent", {}, ""},
+        {"GET", "/users", {}, ""} // This one might hit cache
+    };
+
+    std::cout &lt;&lt; "Processing " &lt;&lt; requests.size() &lt;&lt; " concurrent requests" &lt;&lt; std::endl;
+
+    // In a real server, these would run concurrently
+    for (const auto& request : requests) {
+        auto response = co_await handle_request(request);
+        std::cout &lt;&lt; "Response: " &lt;&lt; response.status_code &lt;&lt; " - "
+                  &lt;&lt; response.body.substr(0, 50) &lt;&lt; "..." &lt;&lt; std::endl;
+        std::cout &lt;&lt; "---" &lt;&lt; std::endl;
+    }
+}
+
+void web_server_example() {
+    std::cout &lt;&lt; "=== Web Server Example ===" &lt;&lt; std::endl;
+
+    auto server_future = simulate_server();
+    server_future.get();
+
+    std::cout &lt;&lt; "Server simulation completed" &lt;&lt; std::endl;
+}
+
+// Main demonstration function
+void demonstrate_coroutines() {
+    std::cout &lt;&lt; "C++20 Coroutines Demonstration\n" &lt;&lt; std::endl;
+
+    basic_coroutine_example();
+    std::cout &lt;&lt; std::endl;
+
+    generator_examples();
+    std::cout &lt;&lt; std::endl;
+
+    advanced_generator_examples();
+    std::cout &lt;&lt; std::endl;
+
+    async_examples();
+    std::cout &lt;&lt; std::endl;
+
+    scheduler_example();
+    std::cout &lt;&lt; std::endl;
+
+    channel_example();
+    std::cout &lt;&lt; std::endl;
+
+    file_processing_example();
+    std::cout &lt;&lt; std::endl;
+
+    web_server_example();
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,132 @@
+<div id="stringstream-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::stringstream In-Depth</h2>
+    <p class="mb-4 text-gray-400">An in-memory I/O stream that operates on a `std::string`. It is incredibly useful for parsing complex strings, formatting data into strings, and performing robust type conversions. Header: #include &lt;sstream&gt;</p>
+    <p class="mb-6 text-gray-400">There are three main types: `std::stringstream` (read/write), `std::istringstream` (read-only), and `std::ostringstream` (write-only).</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                    <pre><code class="language-cpp">stringstream();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty stringstream, ready for writing.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::stringstream ss;
+ss &lt;&lt; "Hello " &lt;&lt; 42; // ss now contains "Hello 42"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(2) Initializing Constructor</h5>
+                    <pre><code class="language-cpp">explicit stringstream( const std::string&amp; str );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a stringstream initialized with a copy of a string, ready for reading.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string data = "Alice 30 95.5";
+std::stringstream ss(data);
+std::string name;
+int age;
+double score;
+ss &gt;&gt; name &gt;&gt; age &gt;&gt; score; // Parses the string</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Key Member Functions</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">str()</h5>
+                    <pre><code class="language-cpp">std::string str() const;
+void str( const std::string&amp; new_str );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">The getter returns a copy of the stream's underlying string buffer. The setter completely replaces the stream's content with a new string and resets the stream's position.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::stringstream ss;
+ss &lt;&lt; "Initial content.";
+std::cout &lt;&lt; ss.str() &lt;&lt; std::endl; // "Initial content."
+
+ss.str("New content."); // Overwrites everything
+ss &lt;&lt; " More."; // Appends to the new content
+std::cout &lt;&lt; ss.str() &lt;&lt; std::endl; // "New content. More."</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">clear()</h5>
+                    <pre><code class="language-cpp">void clear();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Resets the error state flags of the stream (e.g., `eofbit`, `failbit`). This is essential for reusing a stream after an extraction operation has "failed" by reaching the end of the string.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::stringstream ss("123");
+int n;
+ss &gt;&gt; n; // n is 123, ss's eofbit is now set
+
+// The stream is now in a "finished" state. Further reads will fail.
+int m;
+ss &gt;&gt; m; // This operation fails immediately
+
+// To reuse the stream, we must clear the flags and set new content.
+ss.clear(); // Resets eofbit, failbit, etc.
+ss.str("456");
+ss &gt;&gt; m; // Now this succeeds, m is 456.</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">operator&lt;&lt; (Insertion)</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Formats and inserts data into the stream's buffer. It is overloaded for all fundamental types and can be overloaded for user-defined types.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;iomanip&gt; // for manipulators
+std::ostringstream oss;
+oss &lt;&lt; "User ID: " &lt;&lt; 101 &lt;&lt; ", "
+    &lt;&lt; "Balance: $" &lt;&lt; std::fixed &lt;&lt; std::setprecision(2) &lt;&lt; 75.5;
+// oss.str() is "User ID: 101, Balance: $75.50"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">operator&gt;&gt; (Extraction)</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Extracts and parses data from the stream. By default, it skips leading whitespace and stops at the next whitespace.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::istringstream iss("  -123   3.14  end");
+int i;
+double d;
+std::string s;
+iss &gt;&gt; i &gt;&gt; d &gt;&gt; s;
+// i is -123, d is 3.14, s is "end"</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Library of `std::stringstream` Implementation Patterns</h3>
+            <div class="space-y-4">
+                <details>
+                    <summary class="font-semibold text-lg">1. Basic Type Conversion (toString/fromString)</summary>
+                    <div>
+                        <p class="text-gray-400 mb-3">The most fundamental use case: creating robust, generic functions to convert any streamable type to and from a string.</p>
+                        <pre><code class="language-cpp">template&lt;typename T&gt;
+std::string to_string_generic(const T& value) {
+    std::ostringstream oss;
+    oss &lt;&lt; value;
+    return oss.str();
+}
+
+template&lt;typename T&gt;
+T from_string_generic(const std::string& s) {
+    std::istringstream iss(s);
+    T value;
+    iss &gt;&gt; value;
+    if (iss.fail() || !iss.eof()) {
+        throw std::runtime_error("Failed to convert string: " + s);
+    }
+    return value;
+}</code></pre>
+                    </div>
+                </details>
+                <details>
+                    <summary class="font-semibold text-lg">2. Parsing a CSV Line</summary>
+                    <div>
+                        <p class="text-gray-400 mb-3">Using `std::getline` with a delimiter to extract comma-separated values from a single line.</p>
+                        <pre><code class="language-cpp">std::string csv_line = "apple,1.50,10";
+std::istringstream iss(csv_line);
+std::string name;
+double price;
+int quantity;
+char comma;
+
+if (std::getline(iss, name, ',') && (iss &gt;&gt; price &gt;&gt; comma) && (comma == ',') && (iss &gt;&gt; quantity)) {
+    // Successfully parsed: name="apple", price=1.50, quantity=10
+}</code></pre>
+                    </div>
+                </details>
+                <!-- More stringstream patterns continue... -->
+            </div>
+        </div>
+    </div>
+</div>

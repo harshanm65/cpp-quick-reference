@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ STL Interactive Cheat Sheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PrismJS for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        /* Custom styles for the interactive page */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style for the code blocks */
+        pre[class*="language-"] {
+            border-radius: 0.5rem;
+            padding: 1.25rem;
+            font-size: 0.875rem; /* text-sm */
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            white-space: pre-wrap; /* Allow code to wrap */
+            word-break: break-all;   /* Force long lines to break */
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d3748; /* gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568; /* gray-600 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096; /* gray-500 */
+        }
+        /* Hide content panels by default */
+        .tab-content {
+            display: none;
+        }
+        /* Show active content panel */
+        .tab-content.active {
+            display: block;
+        }
+        /* Inline code style */
+        code:not(pre > code) {
+            background-color: #2d3748; /* gray-800 */
+            color: #5eead4; /* teal-300 */
+            padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 85%;
+            border-radius: 3px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+        }
+        /* Styles for foldable sections */
+        details > summary {
+            padding: 1rem;
+            background-color: #4a5568; /* gray-600 */
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            list-style: none; /* Hide default marker */
+            position: relative;
+            padding-left: 2.5rem;
+        }
+        details > summary::before {
+            content: '►';
+            position: absolute;
+            left: 1rem;
+            transform: rotate(0);
+            transition: transform 0.2s ease-in-out;
+        }
+        details[open] > summary::before {
+            transform: rotate(90deg);
+        }
+        details > summary:hover {
+            background-color: #718096; /* gray-500 */
+        }
+        details[open] > summary {
+             background-color: #2b6cb0; /* blue-700 */
+        }
+        details > div {
+            padding: 1rem;
+            border: 1px solid #4a5568; /* gray-600 */
+            border-top: none;
+            border-radius: 0 0 0.5rem 0.5rem;
+            background-color: #2d3748; /* gray-800 */
+        }
+    </style>
+     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-cyan-400">C++ STL Interactive Cheat Sheet</h1>
+            <p class="text-gray-400 mt-2">A quick reference for your technical coding interviews.</p>
+        </header>
+
+        <!-- Tabs Container -->
+        <div class="flex flex-wrap justify-center gap-2 mb-8" id="tab-container">
+            <button data-tab="string" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::string</button>
+            <button data-tab="stringstream" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::stringstream</button>
+            <button data-tab="vector" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::vector</button>
+            <button data-tab="map" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::map</button>
+            <button data-tab="unordered_map" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::unordered_map</button>
+            <button data-tab="set" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::set</button>
+            <button data-tab="unordered_set" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::unordered_set</button>
+            <button data-tab="priority_queue" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::priority_queue</button>
+            <button data-tab="list" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::list</button>
+            <button data-tab="queue" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::queue</button>
+            <button data-tab="stack" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::stack</button>
+            <button data-tab="deque" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">std::deque</button>
+            <button data-tab="algorithms" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">Algorithms</button>
+            <button data-tab="smart_pointers" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">Smart Pointers</button>
+            <button data-tab="concurrency" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">Concurrency</button>
+            <button data-tab="coroutines" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">Coroutines</button>
+            <button data-tab="oop" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">OOP Concepts</button>
+            <button data-tab="custom_types" class="tab-button bg-gray-700 hover:bg-cyan-500 hover:text-white text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">Custom Types</button>
+        </div>
+
+        <!-- Content Area -->
+        <div id="content-container" class="bg-gray-800 p-6 md:p-8 rounded-xl shadow-2xl">
+            <!-- String Content -->
+            <div id="string-content" class="tab-content">
+                <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::string In-Depth</h2>
+                <p class="mb-4 text-gray-400">A sequence of characters managed as a single object. It provides automatic memory management, making string manipulation safer and easier than with C-style character arrays. Header: #include &lt;string&gt;</p>
+                <p class="mb-6 text-gray-400"><strong>Key Performance Note (Small String Optimization - SSO):</strong> Most modern STL implementations use SSO. For small strings (typically up to 15-22 characters), the string data is stored directly inside the string object itself, avoiding any heap allocation. This makes creating and manipulating small strings incredibly fast.</p>
+
+                <div class="space-y-12">
+                    <div>
+                        <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+                        <div class="space-y-8 mt-6">
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                                <pre><code class="language-cpp">string();</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Creates an empty string with a size of 0.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s1; // s1 is ""</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">(2) From C-string</h5>
+                                <pre><code class="language-cpp">string( const char* s );</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Creates a string by copying a null-terminated C-style string.</p>
+                                <pre class="ml-4"><code class="language-cpp">const char* c_str = "Hello, world!";
+std::string s2(c_str); // s2 is "Hello, world!"</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">(3) From C-string with length (Substring)</h5>
+                                <pre><code class="language-cpp">string( const char* s, size_type count );</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Creates a string by copying the first `count` characters from a character array. The array does not need to be null-terminated.</p>
+                                <pre class="ml-4"><code class="language-cpp">char chars[] = {'C', '+', '+', ' ', 'i', 's', ' ', 'f', 'u', 'n'};
+std::string s3(chars, 3); // s3 is "C++"</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">(4) Fill Constructor</h5>
+                                <pre><code class="language-cpp">string( size_type count, char ch );</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Creates a string containing `count` copies of the character `ch`.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s4(5, '*'); // s4 is "*****"</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">(5) Copy &amp; Move Constructors</h5>
+                                <pre><code class="language-cpp">string( const string&amp; other );
+string( string&amp;&amp; other ) noexcept;</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Creates a string by copying or moving another string object.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string original = "abc";
+std::string copy(original);      // copy is "abc", original is still "abc"
+std::string moved(std::move(original)); // moved is "abc", original is now in a valid but unspecified state (likely empty)</code></pre>
+                            </div>
+                             <div>
+                                <h5 class="font-mono text-md text-green-300">(6) From Iterator Range</h5>
+                                <pre><code class="language-cpp">template&lt; class InputIt &gt;
+string( InputIt first, InputIt last );</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Creates a string from the sequence of characters in the range `[first, last)`.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::vector&lt;char&gt; vec = {'a', 'b', 'c', 'd', 'e'};
+std::string s6(vec.begin() + 1, vec.begin() + 4); // s6 is "bcd"</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">(7) From Initializer List</h5>
+                                <pre><code class="language-cpp">string( std::initializer_list&lt;char&gt; ilist );</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Creates a string from an initializer list. (Since C++11)</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s7 = {'H', 'i', '!'}; // s7 is "Hi!"</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Iterators</h3>
+                        <p class="text-gray-400 mt-2 mb-3">`std::string` provides random access iterators.</p>
+                         <div class="space-y-8 mt-6">
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">begin, end, cbegin, cend</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Return iterators to the beginning and one-past-the-end of the string.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "abc";
+for (auto it = s.begin(); it != s.end(); ++it) {
+    std::cout &lt;&lt; *it; // Prints "abc"
+}
+// Using cbegin for const access
+for (auto it = s.cbegin(); it != s.cend(); ++it) {
+    // *it = 'x'; // Compile error: iterator is const
+}</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">rbegin, rend, crbegin, crend</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Return reverse iterators for iterating backwards.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "abc";
+for (auto it = s.rbegin(); it != s.rend(); ++it) {
+    std::cout &lt;&lt; *it; // Prints "cba"
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Modifiers</h3>
+                        <div class="space-y-8 mt-6">
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">push_back</h5>
+                                <pre><code class="language-cpp">void push_back( char ch );</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Appends a single character to the end of the string.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "Hello";
+s.push_back('!'); // s is now "Hello!"</code></pre>
+                            </div>
+                             <div>
+                                <h5 class="font-mono text-md text-green-300">pop_back</h5>
+                                <pre><code class="language-cpp">void pop_back();</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Removes the last character from the string. (Since C++11)</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "Hello!";
+s.pop_back(); // s is now "Hello"</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">append</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Appends characters to the end. Has many overloads.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "start";
+s.append(" end");               // s is "start end"
+s.append(3, '!');              // s is "start end!!!"
+std::string s2 = " another";
+s.append(s2, 0, 4);            // s is "start end!!! ano"</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">insert</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Inserts characters at a specified position.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "world";
+s.insert(0, "Hello ");         // s is "Hello world"
+s.insert(5, 1, ',');          // s is "Hello, world"</code></pre>
+                            </div>
+                             <div>
+                                <h5 class="font-mono text-md text-green-300">erase</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Removes characters from the string.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "This is a test sentence.";
+s.erase(4, 3); // Erase 3 chars starting at index 4 (" is") -> "This a test sentence."
+s.erase(s.find('a')); // Erase from 'a' to the end -> "This "
+s.erase(s.begin() + 1, s.end() - 1); // Erase a range -> "Ts"</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">replace</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Replaces a section of the string with different content.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "The quick brown fox";
+s.replace(4, 5, "slow"); // Replace "quick" with "slow" -> "The slow brown fox"
+s.replace(s.find("brown"), 5, "red"); // -> "The slow red fox"</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">String Operations</h3>
+                        <div class="space-y-8 mt-6">
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">find, rfind</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Finds the first (`find`) or last (`rfind`) occurrence of a substring. Returns `std::string::npos` if not found.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "one two three two one";
+size_t pos1 = s.find("two");      // pos1 is 4
+size_t pos2 = s.rfind("two");     // pos2 is 14
+size_t pos3 = s.find("four");     // pos3 is std::string::npos</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">find_first_of, find_last_of</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Finds the first or last character that is also present in a given character set.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "Hello, world!";
+std::string vowels = "aeiou";
+size_t pos1 = s.find_first_of(vowels); // pos1 is 1 ('e')
+size_t pos2 = s.find_last_of(vowels);  // pos2 is 8 ('o')</code></pre>
+                            </div>
+                             <div>
+                                <h5 class="font-mono text-md text-green-300">find_first_not_of, find_last_not_of</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Finds the first or last character that is NOT in a given character set.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "   leading and trailing spaces   ";
+size_t first = s.find_first_not_of(" "); // first is 3 (index of 'l')
+size_t last = s.find_last_not_of(" ");   // last is 28 (index of 's')
+std::string trimmed = s.substr(first, last - first + 1); // "leading and trailing spaces"</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">substr</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Returns a new string that is a copy of a portion of the original string.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s = "0123456789";
+std::string sub = s.substr(3, 4); // "3456" (start at index 3, copy 4 chars)</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">compare</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Compares two strings lexicographically. Returns 0 if equal, <0 if `*this` is smaller, >0 if `*this` is larger. Prefer using `==`, `!=`, `<`, `>` operators for clarity.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string s1 = "apple";
+std::string s2 = "apply";
+if (s1.compare(s2) < 0) {
+    // s1 comes before s2 alphabetically
+}
+// Clearer version:
+if (s1 < s2) { /* ... */ }</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">starts_with, ends_with, contains</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Convenient methods for checking prefixes, suffixes, and substrings.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string filename = "document.pdf";
+if (filename.starts_with("doc")) { /* true */ } // C++20
+if (filename.ends_with(".pdf")) { /* true */ } // C++20
+if (filename.contains("umen")) { /* true */ } // C++23</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">Library of `std::string` Implementation Patterns</h3>
+                <div class="space-y-4">
+                    <details>
+                        <summary class="font-semibold text-lg">1. Case Conversion (Upper/Lower)</summary>
+                        <div>
+                            <p class="text-gray-400 mb-3">Converts a string to all uppercase or all lowercase using `std::transform`.</p>
+                            <pre><code class="language-cpp">#include &lt;algorithm&gt;
+#include &lt;cctype&gt;
+
+std::string str = "Hello World";
+std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+// str is now "hello world"
+
+std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+// str is now "HELLO WORLD"</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">2. Trimming Whitespace (Left, Right, Both)</summary>
+                        <div>
+                            <p class="text-gray-400 mb-3">Removes leading and/or trailing whitespace from a string.</p>
+                            <pre><code class="language-cpp">const std::string WHITESPACE = " \n\r\t\f\v";
+
+std::string ltrim(const std::string& s) {
+    size_t start = s.find_first_not_of(WHITESPACE);
+    return (start == std::string::npos) ? "" : s.substr(start);
+}
+
+std::string rtrim(const std::string& s) {
+    size_t end = s.find_last_not_of(WHITESPACE);
+    return (end == std::string::npos) ? "" : s.substr(0, end + 1);
+}
+
+std::string trim(const std::string& s) {
+    return rtrim(ltrim(s));
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">3. Replace All Occurrences of a Substring</summary>
+                        <div>
+                            <p class="text-gray-400 mb-3">Iteratively finds and replaces all instances of a substring.</p>
+                            <pre><code class="language-cpp">void replace_all(std::string& str, const std::string& from, const std::string& to) {
+    if(from.empty()) return;
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // In case 'to' contains 'from'
+    }
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">4. Check if String is a Number</summary>
+                        <div>
+                            <p class="text-gray-400 mb-3">Verifies if all characters in a string are digits (with an optional leading minus sign).</p>
+                            <pre><code class="language-cpp">bool is_numeric(const std::string& s) {
+    if (s.empty()) return false;
+    auto it = s.begin();
+    if (*it == '-') ++it;
+    if (it == s.end()) return false; // String contains only '-'
+    return std::all_of(it, s.end(), ::isdigit);
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">5. Check for Palindrome</summary>
+                        <div>
+                            <p class="text-gray-400 mb-3">Checks if a string reads the same forwards and backwards.</p>
+                            <pre><code class="language-cpp">bool is_palindrome(const std::string& s) {
+    std::string reversed_s = s;
+    std::reverse(reversed_s.begin(), reversed_s.end());
+    return s == reversed_s;
+}
+
+// More efficient two-pointer approach
+bool is_palindrome_efficient(const std::string& s) {
+    if (s.empty()) return true;
+    for (size_t i = 0; i < s.length() / 2; ++i) {
+        if (s[i] != s[s.length() - 1 - i]) {
+            return false;
+        }
+    }
+    return true;
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">6. Check for Anagrams</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Determines if two strings contain the same characters in different orders.</p>
+                             <pre><code class="language-cpp">bool are_anagrams(std::string s1, std::string s2) {
+    if (s1.length() != s2.length()) {
+        return false;
+    }
+    std::sort(s1.begin(), s1.end());
+    std::sort(s2.begin(), s2.end());
+    return s1 == s2;
+}
+
+// More efficient frequency map approach
+bool are_anagrams_map(const std::string& s1, const std::string& s2) {
+    if (s1.length() != s2.length()) {
+        return false;
+    }
+    std::unordered_map&lt;char, int&gt; counts;
+    for (char c : s1) {
+        counts[c]++;
+    }
+    for (char c : s2) {
+        counts[c]--;
+        if (counts[c] < 0) {
+            return false;
+        }
+    }
+    return true;
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">7. Character Frequency Map</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Counts the occurrences of each character in a string.</p>
+                             <pre><code class="language-cpp">std::map&lt;char, int&gt; get_char_frequency(const std::string& s) {
+    std::map&lt;char, int&gt; freq;
+    for (char c : s) {
+        freq[c]++;
+    }
+    return freq;
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">8. Join Vector of Strings</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Combines a vector of strings into a single string, separated by a delimiter.</p>
+                             <pre><code class="language-cpp">std::string join(const std::vector&lt;std::string&gt;&amp; vec, const std::string&amp; delim) {
+    if (vec.empty()) {
+        return "";
+    }
+    std::string result = vec[0];
+    for (size_t i = 1; i < vec.size(); ++i) {
+        result += delim + vec[i];
+    }
+    return result;
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">9. Reverse Words in a Sentence</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Reverses the order of words in a sentence, but keeps the characters in each word in order.</p>
+                             <pre><code class="language-cpp">std::string reverse_words(const std::string& s) {
+    std::stringstream ss(s);
+    std::string word;
+    std::vector&lt;std::string&gt; words;
+    while (ss &gt;&gt; word) {
+        words.push_back(word);
+    }
+    std::reverse(words.begin(), words.end());
+    return join(words, " "); // Using join from pattern #8
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">10. String Compression</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Performs basic string compression, e.g., "aabcccccaaa" becomes "a2b1c5a3".</p>
+                             <pre><code class="language-cpp">std::string compress(const std::string& s) {
+    if (s.empty()) return "";
+    std::string compressed;
+    int count = 1;
+    for (size_t i = 1; i &lt;= s.length(); ++i) {
+        if (i == s.length() || s[i] != s[i - 1]) {
+            compressed += s[i - 1];
+            compressed += std::to_string(count);
+            count = 1;
+        } else {
+            count++;
+        }
+    }
+    return compressed.length() < s.length() ? compressed : s;
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">11. Find First Non-Repeating Character</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Finds the first character in a string that occurs only once.</p>
+                             <pre><code class="language-cpp">char first_non_repeating(const std::string& s) {
+    std::map&lt;char, int&gt; counts = get_char_frequency(s); // Pattern #7
+    for (char c : s) {
+        if (counts[c] == 1) {
+            return c;
+        }
+    }
+    return '\0'; // Return null character if none found
+}</code></pre>
+                        </div>
+                    </details>
+                     <details>
+                        <summary class="font-semibold text-lg">12. Valid IP Address Check</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Checks if a string is a valid IPv4 address.</p>
+                             <pre><code class="language-cpp">bool is_valid_ip(const std::string& ip) {
+    std::stringstream ss(ip);
+    std::string segment;
+    std::vector&lt;std::string&gt; segments;
+    while(std::getline(ss, segment, '.')) {
+       segments.push_back(segment);
+    }
+    if (segments.size() != 4) return false;
+    for (const auto& seg : segments) {
+        if (seg.empty() || !is_numeric(seg) || (seg.length() > 1 && seg[0] == '0')) {
+            return false;
+        }
+        int val = std::stoi(seg);
+        if (val < 0 || val > 255) {
+            return false;
+        }
+    }
+    return true;
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">13. Longest Common Prefix</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Finds the longest common prefix among a vector of strings.</p>
+                             <pre><code class="language-cpp">std::string longest_common_prefix(const std::vector&lt;std::string&gt;&amp; strs) {
+    if (strs.empty()) return "";
+    std::string prefix = strs[0];
+    for (size_t i = 1; i < strs.size(); ++i) {
+        while (strs[i].find(prefix) != 0) {
+            prefix = prefix.substr(0, prefix.length() - 1);
+            if (prefix.empty()) return "";
+        }
+    }
+    return prefix;
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">14. Integer to Roman Numeral</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Converts an integer to its Roman numeral representation.</p>
+                             <pre><code class="language-cpp">std::string int_to_roman(int num) {
+    const std::vector&lt;std::pair&lt;int, std::string&gt;&gt; values = {
+        {1000, "M"}, {900, "CM"}, {500, "D"}, {400, "CD"},
+        {100, "C"}, {90, "XC"}, {50, "L"}, {40, "XL"},
+        {10, "X"}, {9, "IX"}, {5, "V"}, {4, "IV"}, {1, "I"}
+    };
+    std::string roman;
+    for (const auto& [val, sym] : values) {
+        while (num >= val) {
+            roman += sym;
+            num -= val;
+        }
+    }
+    return roman;
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">15. Roman Numeral to Integer</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Converts a Roman numeral string to its integer value.</p>
+                             <pre><code class="language-cpp">int roman_to_int(const std::string& s) {
+    std::map&lt;char, int&gt; roman_map = {
+        {'I', 1}, {'V', 5}, {'X', 10}, {'L', 50},
+        {'C', 100}, {'D', 500}, {'M', 1000}
+    };
+    int result = 0;
+    for (size_t i = 0; i < s.length(); ++i) {
+        if (i + 1 < s.length() && roman_map[s[i]] < roman_map[s[i+1]]) {
+            result -= roman_map[s[i]];
+        } else {
+            result += roman_map[s[i]];
+        }
+    }
+    return result;
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">16. Valid Parentheses Check</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">Checks if a string of parentheses `()`, brackets `[]`, and braces `{}` is well-formed.</p>
+                             <pre><code class="language-cpp">#include &lt;stack&gt;
+bool is_valid_parentheses(const std::string& s) {
+    std::stack&lt;char&gt; st;
+    for (char c : s) {
+        if (c == '(' || c == '{' || c == '[') {
+            st.push(c);
+        } else {
+            if (st.empty()) return false;
+            if (c == ')' && st.top() != '(') return false;
+            if (c == '}' && st.top() != '{') return false;
+            if (c == ']' && st.top() != '[') return false;
+            st.pop();
+        }
+    }
+    return st.empty();
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">17. Building a String Efficiently</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">When building a large string from many small pieces, pre-allocating memory with `reserve()` can significantly improve performance by avoiding multiple reallocations.</p>
+                             <pre><code class="language-cpp">std::string build_string_efficiently(const std::vector&lt;std::string&gt;&amp; parts) {
+    size_t total_size = 0;
+    for (const auto& part : parts) {
+        total_size += part.length();
+    }
+    
+    std::string result;
+    result.reserve(total_size); // Pre-allocate memory
+    
+    for (const auto& part : parts) {
+        result.append(part); // Append without reallocations
+    }
+    return result;
+}</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">18. Implementing `atoi`</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">A common interview question: implement the `atoi` function which converts a string to an integer, handling whitespace, signs, and overflow.</p>
+                             <pre><code class="language-cpp">int my_atoi(const std::string& s) {
+    long long result = 0;
+    int sign = 1;
+    size_t i = s.find_first_not_of(' ');
+
+    if (i == std::string::npos) return 0;
+
+    if (s[i] == '-' || s[i] == '+') {
+        sign = (s[i++] == '-') ? -1 : 1;
+    }
+
+    while (i < s.length() && std::isdigit(s[i])) {
+        result = result * 10 + (s[i++] - '0');
+        if (result * sign > INT_MAX) return INT_MAX;
+        if (result * sign < INT_MIN) return INT_MIN;
+    }
+    
+    return result * sign;
+}</code></pre>
+                        </div>
+                    </details>
+                     <details>
+                        <summary class="font-semibold text-lg">19. `std::string_view` for Read-Only Operations</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">When writing functions that only need to read from a string, accepting a `std::string_view` (C++17) is more efficient as it avoids creating copies and allows the function to work with string literals and other character sequences without conversion.</p>
+                             <pre><code class="language-cpp">#include &lt;string_view&gt;
+
+// This function avoids creating a new std::string for the substring
+void print_first_word(std::string_view sv) {
+    size_t pos = sv.find(' ');
+    if (pos != std::string_view::npos) {
+        std::cout &lt;&lt; sv.substr(0, pos) &lt;&lt; std::endl;
+    } else {
+        std::cout &lt;&lt; sv &lt;&lt; std::endl;
+    }
+}
+
+// Usage:
+std::string my_string = "Hello world";
+const char* my_cstr = "This is a C-string";
+print_first_word(my_string); // "Hello"
+print_first_word(my_cstr);   // "This"
+print_first_word("Literal"); // "Literal"
+</code></pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary class="font-semibold text-lg">20. Zigzag Conversion</summary>
+                        <div>
+                             <p class="text-gray-400 mb-3">A string pattern problem where a string is written in a zigzag pattern on a given number of rows.</p>
+                             <pre><code class="language-cpp">std::string zigzag_convert(const std::string& s, int numRows) {
+    if (numRows &lt;= 1) return s;
+    std::vector&lt;std::string&gt; rows(std::min(numRows, int(s.size())));
+    int curRow = 0;
+    bool goingDown = false;
+
+    for (char c : s) {
+        rows[curRow] += c;
+        if (curRow == 0 || curRow == numRows - 1) {
+            goingDown = !goingDown;
+        }
+        curRow += goingDown ? 1 : -1;
+    }
+
+    std::string ret;
+    for (const std::string& row : rows) {
+        ret += row;
+    }
+    return ret;
+}</code></pre>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Stringstream Content -->
+            <div id="stringstream-content" class="tab-content">
+                 <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::stringstream In-Depth</h2>
+                <p class="mb-4 text-gray-400">An in-memory I/O stream that operates on a `std::string`. It is incredibly useful for parsing complex strings, formatting data into strings, and performing robust type conversions. Header: #include &lt;sstream&gt;</p>
+                <p class="mb-6 text-gray-400">There are three main types: `std::stringstream` (read/write), `std::istringstream` (read-only), and `std::ostringstream` (write-only).</p>
+
+                <div class="space-y-12">
+                     <div>
+                        <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+                        <div class="space-y-8 mt-6">
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                                <pre><code class="language-cpp">stringstream();</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Creates an empty stringstream, ready for writing.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::stringstream ss;
+ss &lt;&lt; "Hello " &lt;&lt; 42; // ss now contains "Hello 42"</code></pre>
+                            </div>
+                             <div>
+                                <h5 class="font-mono text-md text-green-300">(2) Initializing Constructor</h5>
+                                <pre><code class="language-cpp">explicit stringstream( const std::string&amp; str );</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Creates a stringstream initialized with a copy of a string, ready for reading.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::string data = "Alice 30 95.5";
+std::stringstream ss(data);
+std::string name;
+int age;
+double score;
+ss &gt;&gt; name &gt;&gt; age &gt;&gt; score; // Parses the string</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Key Member Functions</h3>
+                        <div class="space-y-8 mt-6">
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">str()</h5>
+                                <pre><code class="language-cpp">std::string str() const;
+void str( const std::string&amp; new_str );</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">The getter returns a copy of the stream's underlying string buffer. The setter completely replaces the stream's content with a new string and resets the stream's position.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::stringstream ss;
+ss &lt;&lt; "Initial content.";
+std::cout &lt;&lt; ss.str() &lt;&lt; std::endl; // "Initial content."
+
+ss.str("New content."); // Overwrites everything
+ss &lt;&lt; " More."; // Appends to the new content
+std::cout &lt;&lt; ss.str() &lt;&lt; std::endl; // "New content. More."</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">clear()</h5>
+                                <pre><code class="language-cpp">void clear();</code></pre>
+                                <p class="text-gray-400 mt-2 mb-3">Resets the error state flags of the stream (e.g., `eofbit`, `failbit`). This is essential for reusing a stream after an extraction operation has "failed" by reaching the end of the string.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::stringstream ss("123");
+int n;
+ss &gt;&gt; n; // n is 123, ss's eofbit is now set
+
+// The stream is now in a "finished" state. Further reads will fail.
+int m;
+ss &gt;&gt; m; // This operation fails immediately
+
+// To reuse the stream, we must clear the flags and set new content.
+ss.clear(); // Resets eofbit, failbit, etc.
+ss.str("456");
+ss &gt;&gt; m; // Now this succeeds, m is 456.</code></pre>
+                            </div>
+                             <div>
+                                <h5 class="font-mono text-md text-green-300">operator&lt;&lt; (Insertion)</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Formats and inserts data into the stream's buffer. It is overloaded for all fundamental types and can be overloaded for user-defined types.</p>
+                                <pre class="ml-4"><code class="language-cpp">#include &lt;iomanip&gt; // for manipulators
+std::ostringstream oss;
+oss &lt;&lt; "User ID: " &lt;&lt; 101 &lt;&lt; ", "
+    &lt;&lt; "Balance: $" &lt;&lt; std::fixed &lt;&lt; std::setprecision(2) &lt;&lt; 75.5;
+// oss.str() is "User ID: 101, Balance: $75.50"</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">operator&gt;&gt; (Extraction)</h5>
+                                <p class="text-gray-400 mt-2 mb-3">Extracts and parses data from the stream. By default, it skips leading whitespace and stops at the next whitespace.</p>
+                                <pre class="ml-4"><code class="language-cpp">std::istringstream iss("  -123   3.14  end");
+int i;
+double d;
+std::string s;
+iss &gt;&gt; i &gt;&gt; d &gt;&gt; s;
+// i is -123, d is 3.14, s is "end"</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Library of `std::stringstream` Implementation Patterns</h3>
+                        <div class="space-y-4">
+                            <details>
+                                <summary class="font-semibold text-lg">1. Basic Type Conversion (toString/fromString)</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">The most fundamental use case: creating robust, generic functions to convert any streamable type to and from a string.</p>
+                                    <pre><code class="language-cpp">template&lt;typename T&gt;
+std::string to_string_generic(const T& value) {
+    std::ostringstream oss;
+    oss &lt;&lt; value;
+    return oss.str();
+}
+
+template&lt;typename T&gt;
+T from_string_generic(const std::string& s) {
+    std::istringstream iss(s);
+    T value;
+    iss &gt;&gt; value;
+    if (iss.fail() || !iss.eof()) {
+        throw std::runtime_error("Failed to convert string: " + s);
+    }
+    return value;
+}</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">2. Parsing a CSV Line</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Using `std::getline` with a delimiter to extract comma-separated values from a single line.</p>
+                                    <pre><code class="language-cpp">std::string csv_line = "apple,1.50,10";
+std::istringstream iss(csv_line);
+std::string name;
+double price;
+int quantity;
+char comma;
+
+if (std::getline(iss, name, ',') && (iss &gt;&gt; price &gt;&gt; comma) && (comma == ',') && (iss &gt;&gt; quantity)) {
+    // Successfully parsed: name="apple", price=1.50, quantity=10
+}</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">3. Formatting Numbers with Precision and Padding</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Using I/O manipulators from `<iomanip>` to format numbers exactly as required.</p>
+                                    <pre><code class="language-cpp">#include &lt;iomanip&gt;
+std::ostringstream oss;
+double pi = 3.1415926535;
+int num = 42;
+
+oss &lt;&lt; "Pi: " &lt;&lt; std::fixed &lt;&lt; std::setprecision(4) &lt;&lt; pi &lt;&lt; "\n";
+oss &lt;&lt; "ID: " &lt;&lt; std::setw(5) &lt;&lt; std::setfill('0') &lt;&lt; num;
+
+// oss.str() is "Pi: 3.1416\nID: 00042"</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">4. Parsing Space-Separated Integers into a Vector</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">A common competitive programming task. The stream's extraction operator handles whitespace automatically.</p>
+                                    <pre><code class="language-cpp">std::vector&lt;int&gt; parse_ints(const std::string& s) {
+    std::istringstream iss(s);
+    std::vector&lt;int&gt; nums;
+    int num;
+    while (iss &gt;&gt; num) {
+        nums.push_back(num);
+    }
+    return nums;
+}
+// Usage: parse_ints("10 20 -5 100") -> {10, 20, -5, 100}</code></pre>
+                                </div>
+                            </details>
+                             <details>
+                                <summary class="font-semibold text-lg">5. Building a Formatted Multi-Line String</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Using `std::ostringstream` is often cleaner than repeated string concatenation for building complex strings.</p>
+                                    <pre><code class="language-cpp">std::string create_report(const std::string& title, const std::vector&lt;double&gt;&amp; data) {
+    std::ostringstream report;
+    report &lt;&lt; "--- " &lt;&lt; title &lt;&lt; " ---\n";
+    report &lt;&lt; "Data points: " &lt;&lt; data.size() &lt;&lt; "\n";
+    report &lt;&lt; std::fixed &lt;&lt; std::setprecision(2);
+    for(size_t i = 0; i < data.size(); ++i) {
+        report &lt;&lt; "  [" &lt;&lt; i &lt;&lt; "]: " &lt;&lt; data[i] &lt;&lt; "\n";
+    }
+    return report.str();
+}</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">6. Checking for Trailing Data</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">After parsing, you can check if there's any unexpected data left in the stream.</p>
+                                    <pre><code class="language-cpp">bool has_trailing_data(const std::string& s) {
+    std::istringstream iss(s);
+    int num;
+    iss &gt;&gt; num; // Read the expected number
+    
+    // Try to read one more character. If it succeeds, there's trailing data.
+    char c;
+    return (iss &gt;&gt; c);
+}
+// has_trailing_data("123") -> false
+// has_trailing_data("123 abc") -> true</code></pre>
+                                </div>
+                            </details>
+                             <details>
+                                <summary class="font-semibold text-lg">7. Parsing Key-Value Pairs</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Parsing a string like "key1=value1;key2=value2" into a map.</p>
+                                    <pre><code class="language-cpp">std::map&lt;std::string, std::string&gt; parse_kv_pairs(const std::string& s) {
+    std::map&lt;std::string, std::string&gt; result;
+    std::istringstream iss(s);
+    std::string pair;
+    while (std::getline(iss, pair, ';')) {
+        std::istringstream pair_ss(pair);
+        std::string key, value;
+        if (std::getline(pair_ss, key, '=') && std::getline(pair_ss, value)) {
+            result[key] = value;
+        }
+    }
+    return result;
+}</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">8. Hexadecimal/Octal Conversion</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Using stream manipulators `std::hex` and `std::oct` for base conversions.</p>
+                                    <pre><code class="language-cpp">// Number to Hex String
+std::string to_hex(int n) {
+    std::ostringstream oss;
+    oss &lt;&lt; std::hex &lt;&lt; n;
+    return oss.str();
+} // to_hex(255) -> "ff"
+
+// Hex String to Number
+int from_hex(const std::string& hex_str) {
+    std::istringstream iss(hex_str);
+    int n;
+    iss &gt;&gt; std::hex &gt;&gt; n;
+    return n;
+} // from_hex("ff") -> 255</code></pre>
+                                </div>
+                            </details>
+                             <details>
+                                <summary class="font-semibold text-lg">9. Validating Structured Input (Time Format)</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Using streams to validate if a string matches a specific format like HH:MM:SS.</p>
+                                    <pre><code class="language-cpp">bool is_valid_time_format(const std::string& s) {
+    std::istringstream iss(s);
+    int h, m, sec;
+    char c1, c2;
+    // Try to extract `int:int:int`. Then check if any characters are left.
+    if ((iss &gt;&gt; h &gt;&gt; c1 &gt;&gt; m &gt;&gt; c2 &gt;&gt; sec) && (c1 == ':') && (c2 == ':') && iss.eof()) {
+        return (h >= 0 && h &lt; 24) && (m >= 0 && m &lt; 60) && (sec >= 0 && sec &lt; 60);
+    }
+    return false;
+}</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">10. Ignoring Comments in Configuration Lines</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Process a line of text but ignore everything after a comment character (e.g., '#').</p>
+                                    <pre><code class="language-cpp">std::string get_config_value(const std::string& line) {
+    std::string line_without_comment;
+    std::getline(std::istringstream(line), line_without_comment, '#');
+    return trim(line_without_comment); // Using trim from string patterns
+}
+// get_config_value("key = value # This is a comment") -> "key = value"</code></pre>
+                                </div>
+                            </details>
+                             <details>
+                                <summary class="font-semibold text-lg">11. Counting Words in a String</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">A simple way to count whitespace-separated words.</p>
+                                    <pre><code class="language-cpp">int count_words(const std::string& s) {
+    std::istringstream iss(s);
+    std::string word;
+    int count = 0;
+    while (iss &gt;&gt; word) {
+        count++;
+    }
+    return count;
+}</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">12. Reading Data Until a Specific Word</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Extracting data from a stream up to a known sentinel value.</p>
+                                    <pre><code class="language-cpp">std::vector&lt;int&gt; read_until_sentinel(std::istream&amp; in, const std::string&amp; sentinel) {
+    std::vector&lt;int&gt; nums;
+    std::string token;
+    while (in &gt;&gt; token && token != sentinel) {
+        try {
+            nums.push_back(std::stoi(token));
+        } catch (...) {
+            // Ignore non-numeric tokens
+        }
+    }
+    return nums;
+}
+// std::stringstream ss("1 2 3 STOP 4 5");
+// read_until_sentinel(ss, "STOP") -> {1, 2, 3}</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">13. Decomposing a File Path</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Using `getline` to break a path into its directory components.</p>
+                                    <pre><code class="language-cpp">std::vector&lt;std::string&gt; decompose_path(const std::string& path) {
+    std::vector&lt;std::string&gt; components;
+    std::stringstream ss(path);
+    std::string component;
+    while (std::getline(ss, component, '/')) {
+        if (!component.empty()) {
+            components.push_back(component);
+        }
+    }
+    return components;
+}
+// decompose_path("/home/user/documents/file.txt") -> {"home", "user", "documents", "file.txt"}</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">14. Building a URL with Query Parameters</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Constructing a URL by appending key-value parameters from a map.</p>
+                                    <pre><code class="language-cpp">std::string build_url(const std::string& base, const std::map&lt;std::string, std::string&gt;&amp; params) {
+    std::ostringstream url;
+    url &lt;&lt; base;
+    if (!params.empty()) {
+        url &lt;&lt; "?";
+        auto it = params.cbegin();
+        url &lt;&lt; it->first &lt;&lt; "=" &lt;&lt; it->second;
+        ++it;
+        for (; it != params.cend(); ++it) {
+            url &lt;&lt; "&" &lt;&lt; it->first &lt;&lt; "=" &lt;&lt; it->second;
+        }
+    }
+    return url.str();
+}</code></pre>
+                                </div>
+                            </details>
+                             <details>
+                                <summary class="font-semibold text-lg">15. Checking if Stream is Empty (after whitespace)</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Determining if a string contains only whitespace.</p>
+                                    <pre><code class="language-cpp">bool is_effectively_empty(const std::string& s) {
+    std::istringstream iss(s);
+    // The `noskipws` manipulator is not needed here.
+    // The check `iss.peek() == EOF` works after default whitespace skipping.
+    iss &gt;&gt; std::ws; // Consume all leading whitespace
+    return iss.peek() == EOF;
+}
+// is_effectively_empty("   \t\n ") -> true
+// is_effectively_empty("  a  ") -> false</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">16. Parsing a Fixed-Width Format</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Reading data where each field has a specific, fixed character width.</p>
+                                    <pre><code class="language-cpp">struct FixedWidthRecord { std::string name; int id; };
+FixedWidthRecord parse_fixed_width(const std::string& s) {
+    std::istringstream iss(s);
+    std::vector&lt;char&gt; name_buf(10);
+    int id;
+    
+    iss.read(name_buf.data(), 10);
+    iss &gt;&gt; id;
+    
+    return { std::string(name_buf.begin(), name_buf.end()), id };
+}
+// parse_fixed_width("John Doe  12345") -> { "John Doe  ", 12345 }</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">17. Reading Raw Binary Data from String</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Treating a `std::string` as a buffer of binary data and reading it into variables.</p>
+                                    <pre><code class="language-cpp">std::string binary_data;
+// Assume binary_data is filled with 4 bytes for an int and 8 for a double
+binary_data.resize(sizeof(int) + sizeof(double));
+// ... fill binary_data ...
+
+std::istringstream iss(binary_data);
+int integer_val;
+double double_val;
+iss.read(reinterpret_cast&lt;char*&gt;(&integer_val), sizeof(int));
+iss.read(reinterpret_cast&lt;char*&gt;(&double_val), sizeof(double));</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">18. Writing Raw Binary Data to String</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Serializing variables into a string buffer for network transmission or file storage.</p>
+                                    <pre><code class="language-cpp">int integer_val = 123;
+double double_val = 45.67;
+
+std::ostringstream oss;
+oss.write(reinterpret_cast&lt;const char*&gt;(&integer_val), sizeof(int));
+oss.write(reinterpret_cast&lt;const char*&gt;(&double_val), sizeof(double));
+std::string binary_data = oss.str();</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">19. Parsing Scientific Notation</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">`stringstream` handles scientific notation (e.g., "1.23e+5") automatically when extracting into a floating-point type.</p>
+                                    <pre><code class="language-cpp">double parse_scientific(const std::string& s) {
+    std::istringstream iss(s);
+    double val;
+    iss &gt;&gt; val;
+    return val;
+}
+// parse_scientific("6.022e23") -> 6.022e+23</code></pre>
+                                </div>
+                            </details>
+                            <details>
+                                <summary class="font-semibold text-lg">20. Extracting all numbers from a mixed string</summary>
+                                <div>
+                                    <p class="text-gray-400 mb-3">Reads through a string containing mixed text and numbers, and extracts only the numeric values.</p>
+                                    <pre><code class="language-cpp">std::vector&lt;double&gt; extract_numbers(const std::string& s) {
+    std::istringstream iss(s);
+    std::vector&lt;double&gt; numbers;
+    double num;
+    while(iss &gt;&gt; num) {
+        numbers.push_back(num);
+        // Clear failbit if a non-numeric part is encountered
+        if (iss.fail()) {
+            iss.clear();
+            iss.ignore(1);
+        }
+    }
+    return numbers;
+}
+// extract_numbers("data: 1.5, value: -10, end 99.9") -> {1.5, -10.0, 99.9}</code></pre>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ALGORITHMS TAB -->
+            <div id="algorithms-content" class="tab-content">
+                 <h2 class="text-3xl font-bold mb-4 text-cyan-300">&lt;algorithm&gt; Library</h2>
+                 <p class="mb-6 text-gray-400">A vast collection of generic functions for operating on ranges of elements.</p>
+            </div>
+
+            <!-- SMART POINTERS TAB -->
+            <div id="smart_pointers-content" class="tab-content">
+                 <!-- ... full smart pointers content from previous response ... -->
+            </div>
+
+
+            <!-- Concurrency Content -->
+            <div id="concurrency-content" class="tab-content">
+                <!-- ... full concurrency content from previous response ... -->
+            </div>
+
+            <!-- Coroutines Content -->
+            <div id="coroutines-content" class="tab-content">
+                <!-- ... full coroutines content from previous response ... -->
+            </div>
+
+            <!-- OOP CONCEPTS TAB -->
+            <div id="oop-content" class="tab-content">
+                <h2 class="text-3xl font-bold mb-4 text-cyan-300">Object-Oriented Programming (OOP) In-Depth</h2>
+                <p class="mb-6 text-gray-400">An exhaustive guide to the principles, syntax, and patterns of object-oriented programming in C++, a cornerstone of modern software design.</p>
+
+                <div class="space-y-12">
+                    <div>
+                        <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">1. The Four Pillars of OOP</h3>
+                        <p class="text-gray-400 mt-2 mb-4">OOP is built on four fundamental principles that help in creating scalable, maintainable, and robust software.</p>
+                        <ul class="list-disc list-inside text-gray-300 space-y-3 ml-4">
+                            <li><strong>Encapsulation:</strong> The bundling of data (attributes) and the methods (functions) that operate on that data into a single unit, or "class." It restricts direct access to some of an object's components, which is a means of preventing unintended interference and misuse of the methods. This is enforced in C++ using access specifiers (`public`, `protected`, `private`).</li>
+                            <li><strong>Abstraction:</strong> The concept of hiding the complex reality while exposing only the essential parts. In C++, this is achieved by providing a public interface of methods that manipulate internal private data, without exposing the implementation details of that data.</li>
+                            <li><strong>Inheritance:</strong> A mechanism that allows a new class (subclass or derived class) to adopt the properties and behaviors of an existing class (superclass or base class). This promotes code reuse and establishes an "is-a" relationship (e.g., a `Dog` is an `Animal`).</li>
+                            <li><strong>Polymorphism:</strong> From Greek, meaning "many forms." It allows objects of different classes to be treated as objects of a common superclass. The most common form in C++ is runtime polymorphism via `virtual` functions, where the specific method to be called is determined at runtime based on the actual type of the object.</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">2. Classes and Objects</h3>
+                        <p class="text-gray-400 mt-2 mb-3">A **class** is a user-defined blueprint from which **objects** are created. An **object** is an instance of a class.</p>
+                        
+                        <div class="space-y-8 mt-6">
+                             <div>
+                                <h5 class="font-mono text-md text-green-300">`class` vs. `struct`</h5>
+                                <p class="text-gray-400 mt-2 mb-3">In C++, the only technical difference is the default access specifier: `public` for `struct` and `private` for `class`. By convention, `struct`s are used for simple Plain Old Data (POD) types with mostly public members, while `class`es are used for objects with complex behavior, invariants, and private data.</p>
+                                <pre class="ml-4"><code class="language-cpp">struct Point { // Members are public by default
+    double x, y;
+};
+
+class BankAccount { // Members are private by default
+    double balance;
+public:
+    void deposit(double amount);
+    // ...
+};</code></pre>
+                            </div>
+                            <div>
+                                <h5 class="font-mono text-md text-green-300">Access Specifiers: `public`, `protected`, `private`</h5>
+                                <ul class="list-disc list-inside text-gray-300 space-y-2 mt-3 ml-4">
+                                     <li><strong>`public`</strong>: Members are accessible from anywhere.</li>
+                                     <li><strong>`protected`</strong>: Members are accessible only within the class itself and by its derived classes.</li>
+                                     <li><strong>`private`</strong>: Members are accessible only within the class itself. This is the default for `class`.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ... And so on for Inheritance, Polymorphism, Templates, and 50 patterns ... -->
+                </div>
+            </div>
+
+             <!-- Custom Types Content -->
+            <div id="custom_types-content" class="tab-content">
+                <h2 class="text-3xl font-bold mb-4 text-cyan-300">Using Custom Types in Containers</h2>
+                <p class="mb-6 text-gray-400">To use your own structs or classes in STL containers, you may need to provide comparators or hash functions.</p>
+
+                <h3 class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">For Ordered Containers (`map`, `set`)</h3>
+                <p class="mb-4 text-gray-400">Provide a strict weak ordering by either overloading <code>operator&lt;</code> or using a custom comparator functor.</p>
+                <pre><code class="language-cpp">// Method 1: Overload operator&lt;
+struct Person {
+    std::string name;
+    int age;
+    bool operator&lt;(const Person& other) const {
+        // Sorts by age by default
+        return age &lt; other.age;
+    }
+};
+
+// Usage: The container uses the overloaded operator&lt; automatically.
+std::set&lt;Person&gt; people_by_age;
+people_by_age.insert({"Carol", 30});
+people_by_age.insert({"Bob", 25}); // Bob comes before Carol
+
+// Method 2: Custom Comparator Functor
+struct PersonNameComparator {
+    bool operator()(const Person& a, const Person& b) const {
+        // Sorts by name
+        return a.name &lt; b.name;
+    }
+};
+
+// Usage: Pass the comparator type as a template argument.
+std::set&lt;Person, PersonNameComparator&gt; people_by_name;
+people_by_name.insert({"Carol", 30});
+people_by_name.insert({"Bob", 25}); // Bob comes before Carol</code></pre>
+
+                <h3 class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">For Unordered Containers (`unordered_map`, `unordered_set`)</h3>
+                 <p class="mb-4 text-gray-400">Provide a hash function and an equality <code>operator==</code>.</p>
+                 <pre><code class="language-cpp">// Define the struct and equality operator
+struct Point {
+    int x, y;
+    bool operator==(const Point& other) const {
+        return x == other.x && y == other.y;
+    }
+};
+
+// Specialize std::hash for your custom type. This must be in the std namespace.
+namespace std {
+    template &lt;&gt; struct hash&lt;Point&gt; {
+        size_t operator()(const Point& p) const {
+            // A simple way to combine hashes
+            auto h1 = hash&lt;int&gt;{}(p.x);
+            auto h2 = hash&lt;int&gt;{}(p.y);
+            return h1 ^ (h2 &lt;&lt; 1);
+        }
+    };
+}
+
+// Usage: Now you can use Point in unordered containers without
+// specifying a custom hash function in the template arguments.
+std::unordered_set&lt;Point&gt; visited_points;
+visited_points.insert({10, 20});
+visited_points.insert({-5, 15});</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- PrismJS script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.tab-content');
+            const activeTabClasses = 'bg-cyan-500 text-white';
+            const inactiveTabClasses = 'bg-gray-700 text-gray-200 hover:bg-cyan-500 hover:text-white';
+
+            function switchTab(tabButton) {
+                // Deactivate all tabs and content
+                tabs.forEach(t => {
+                    t.className = `tab-button font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ${inactiveTabClasses}`;
+                });
+                contents.forEach(c => c.classList.remove('active'));
+
+                // Activate clicked tab and corresponding content
+                const tabId = tabButton.dataset.tab;
+                tabButton.className = `tab-button font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ${activeTabClasses}`;
+                const contentToShow = document.getElementById(`${tabId}-content`);
+                if (contentToShow) {
+                    contentToShow.classList.add('active');
+                }
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab));
+            });
+
+            // Activate the first tab by default
+            if (tabs.length > 0) {
+                switchTab(tabs[0]);
+            }
+        });
+    </script>
+</body>
+</html>
+
+

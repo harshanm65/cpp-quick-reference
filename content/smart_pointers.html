@@ -1,0 +1,826 @@
+<div id="smart_pointers-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">Smart Pointers In-Depth</h2>
+    <p class="mb-4 text-gray-400">Smart pointers are objects that manage the lifetime of dynamically allocated memory automatically. They provide RAII (Resource Acquisition Is Initialization) semantics and help prevent memory leaks, dangling pointers, and other common memory management errors. Header: #include &lt;memory&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Benefits:</strong> Automatic memory management, exception safety, clear ownership semantics, prevention of common memory bugs like leaks and double deletion.</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">std::unique_ptr</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Basic Usage and Ownership</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Exclusive ownership smart pointer - cannot be copied, only moved.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;memory&gt;
+#include &lt;iostream&gt;
+
+// Creating unique_ptr
+std::unique_ptr&lt;int&gt; ptr1 = std::make_unique&lt;int&gt;(42);
+std::unique_ptr&lt;int&gt; ptr2(new int(24)); // Less preferred
+
+// Access the value
+std::cout &lt;&lt; *ptr1 &lt;&lt; std::endl; // 42
+std::cout &lt;&lt; *ptr2 &lt;&lt; std::endl; // 24
+
+// Get raw pointer (be careful!)
+int* raw = ptr1.get();
+
+// Check if pointer is valid
+if (ptr1) {
+    std::cout &lt;&lt; "ptr1 is valid" &lt;&lt; std::endl;
+}
+
+// Release ownership (returns raw pointer, unique_ptr becomes null)
+int* released = ptr1.release();
+delete released; // You're responsible for cleanup now
+
+// Reset to different value
+ptr2.reset(new int(100));
+ptr2.reset(); // Reset to nullptr</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Move Semantics</h5>
+                    <p class="text-gray-400 mt-2 mb-3">unique_ptr cannot be copied but can be moved to transfer ownership.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unique_ptr&lt;int&gt; ptr1 = std::make_unique&lt;int&gt;(42);
+
+// Move constructor
+std::unique_ptr&lt;int&gt; ptr2 = std::move(ptr1);
+// ptr1 is now nullptr, ptr2 owns the resource
+
+// Move assignment
+std::unique_ptr&lt;int&gt; ptr3;
+ptr3 = std::move(ptr2);
+// ptr2 is now nullptr, ptr3 owns the resource
+
+// Function that takes ownership
+void process_data(std::unique_ptr&lt;int&gt; data) {
+    std::cout &lt;&lt; "Processing: " &lt;&lt; *data &lt;&lt; std::endl;
+    // data is automatically deleted when function ends
+}
+
+// Function that returns ownership
+std::unique_ptr&lt;int&gt; create_data() {
+    return std::make_unique&lt;int&gt;(100);
+}
+
+// Usage
+auto data = create_data();
+process_data(std::move(data)); // data is now nullptr</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Arrays and Custom Deleters</h5>
+                    <p class="text-gray-400 mt-2 mb-3">unique_ptr can manage arrays and use custom deletion logic.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Array support
+std::unique_ptr&lt;int[]&gt; arr = std::make_unique&lt;int[]&gt;(10);
+arr[0] = 1;
+arr[1] = 2;
+// Automatically calls delete[] when destroyed
+
+// Custom deleter
+struct FileDeleter {
+    void operator()(FILE* file) {
+        if (file) {
+            std::fclose(file);
+            std::cout &lt;&lt; "File closed" &lt;&lt; std::endl;
+        }
+    }
+};
+
+std::unique_ptr&lt;FILE, FileDeleter&gt; file_ptr(std::fopen("test.txt", "w"));
+
+// Lambda custom deleter
+auto custom_deleter = [](int* p) {
+    std::cout &lt;&lt; "Custom deletion of: " &lt;&lt; *p &lt;&lt; std::endl;
+    delete p;
+};
+
+std::unique_ptr&lt;int, decltype(custom_deleter)&gt; custom_ptr(
+    new int(42), custom_deleter
+);
+
+// Using unique_ptr with custom classes
+class Resource {
+public:
+    Resource(int id) : id_(id) {
+        std::cout &lt;&lt; "Resource " &lt;&lt; id_ &lt;&lt; " created" &lt;&lt; std::endl;
+    }
+    ~Resource() {
+        std::cout &lt;&lt; "Resource " &lt;&lt; id_ &lt;&lt; " destroyed" &lt;&lt; std::endl;
+    }
+    void use() { std::cout &lt;&lt; "Using resource " &lt;&lt; id_ &lt;&lt; std::endl; }
+private:
+    int id_;
+};
+
+auto resource = std::make_unique&lt;Resource&gt;(1);
+resource-&gt;use();</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">std::shared_ptr</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Shared Ownership and Reference Counting</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Multiple shared_ptr instances can own the same resource. Resource is deleted when last shared_ptr is destroyed.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Creating shared_ptr
+std::shared_ptr&lt;int&gt; ptr1 = std::make_shared&lt;int&gt;(42);
+std::shared_ptr&lt;int&gt; ptr2 = ptr1; // Copy - both share ownership
+
+std::cout &lt;&lt; "Reference count: " &lt;&lt; ptr1.use_count() &lt;&lt; std::endl; // 2
+std::cout &lt;&lt; "Value: " &lt;&lt; *ptr1 &lt;&lt; std::endl; // 42
+std::cout &lt;&lt; "Same object: " &lt;&lt; (ptr1.get() == ptr2.get()) &lt;&lt; std::endl; // true
+
+{
+    std::shared_ptr&lt;int&gt; ptr3 = ptr1;
+    std::cout &lt;&lt; "Reference count: " &lt;&lt; ptr1.use_count() &lt;&lt; std::endl; // 3
+} // ptr3 goes out of scope
+
+std::cout &lt;&lt; "Reference count: " &lt;&lt; ptr1.use_count() &lt;&lt; std::endl; // 2
+
+ptr2.reset(); // ptr2 no longer owns the resource
+std::cout &lt;&lt; "Reference count: " &lt;&lt; ptr1.use_count() &lt;&lt; std::endl; // 1
+
+// When ptr1 goes out of scope, the int is deleted</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Aliasing Constructor and get_deleter</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Advanced shared_ptr features for complex ownership scenarios.</p>
+                    <pre class="ml-4"><code class="language-cpp">struct Point {
+    int x, y;
+    Point(int x, int y) : x(x), y(y) {}
+};
+
+// Aliasing constructor - share ownership but point to different object
+auto point_ptr = std::make_shared&lt;Point&gt;(10, 20);
+std::shared_ptr&lt;int&gt; x_ptr(point_ptr, &point_ptr-&gt;x); // Points to x member
+
+std::cout &lt;&lt; "Point ref count: " &lt;&lt; point_ptr.use_count() &lt;&lt; std::endl; // 2
+std::cout &lt;&lt; "X value: " &lt;&lt; *x_ptr &lt;&lt; std::endl; // 10
+
+// Custom deleter with shared_ptr
+auto deleter = [](Point* p) {
+    std::cout &lt;&lt; "Custom deleting Point(" &lt;&lt; p-&gt;x &lt;&lt; ", " &lt;&lt; p-&gt;y &lt;&lt; ")" &lt;&lt; std::endl;
+    delete p;
+};
+
+std::shared_ptr&lt;Point&gt; custom_point(new Point(5, 15), deleter);
+
+// Check deleter type
+auto* del = std::get_deleter&lt;decltype(deleter)&gt;(custom_point);
+if (del) {
+    std::cout &lt;&lt; "Custom deleter found" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Thread Safety</h5>
+                    <p class="text-gray-400 mt-2 mb-3">shared_ptr reference counting is thread-safe, but object access requires synchronization.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;thread&gt;
+#include &lt;vector&gt;
+#include &lt;mutex&gt;
+
+class ThreadSafeCounter {
+private:
+    mutable std::mutex mutex_;
+    int count_;
+public:
+    ThreadSafeCounter(int initial = 0) : count_(initial) {}
+
+    void increment() {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        ++count_;
+    }
+
+    int get() const {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        return count_;
+    }
+};
+
+void worker(std::shared_ptr&lt;ThreadSafeCounter&gt; counter) {
+    for (int i = 0; i &lt; 1000; ++i) {
+        counter-&gt;increment();
+    }
+}
+
+// Thread-safe usage
+auto counter = std::make_shared&lt;ThreadSafeCounter&gt;();
+
+std::vector&lt;std::thread&gt; threads;
+for (int i = 0; i &lt; 4; ++i) {
+    threads.emplace_back(worker, counter); // Safe to pass by value
+}
+
+for (auto& t : threads) {
+    t.join();
+}
+
+std::cout &lt;&lt; "Final count: " &lt;&lt; counter-&gt;get() &lt;&lt; std::endl; // 4000</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">std::weak_ptr</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Breaking Circular References</h5>
+                    <p class="text-gray-400 mt-2 mb-3">weak_ptr doesn't affect reference count and helps prevent circular dependencies.</p>
+                    <pre class="ml-4"><code class="language-cpp">struct Node {
+    int data;
+    std::shared_ptr&lt;Node&gt; next;
+    std::weak_ptr&lt;Node&gt; parent; // Use weak_ptr to break cycles
+
+    Node(int val) : data(val) {}
+    ~Node() {
+        std::cout &lt;&lt; "Node " &lt;&lt; data &lt;&lt; " destroyed" &lt;&lt; std::endl;
+    }
+};
+
+// Creating a simple linked structure
+auto node1 = std::make_shared&lt;Node&gt;(1);
+auto node2 = std::make_shared&lt;Node&gt;(2);
+
+node1-&gt;next = node2;
+node2-&gt;parent = node1; // weak_ptr doesn't increase reference count
+
+std::cout &lt;&lt; "node1 ref count: " &lt;&lt; node1.use_count() &lt;&lt; std::endl; // 1
+std::cout &lt;&lt; "node2 ref count: " &lt;&lt; node2.use_count() &lt;&lt; std::endl; // 1
+
+// Access through weak_ptr
+if (auto parent = node2-&gt;parent.lock()) {
+    std::cout &lt;&lt; "Parent data: " &lt;&lt; parent-&gt;data &lt;&lt; std::endl; // 1
+}
+
+// Check if weak_ptr is expired
+if (node2-&gt;parent.expired()) {
+    std::cout &lt;&lt; "Parent has been destroyed" &lt;&lt; std::endl;
+} else {
+    std::cout &lt;&lt; "Parent still exists" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Observer Pattern with weak_ptr</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Using weak_ptr to implement safe observer patterns.</p>
+                    <pre class="ml-4"><code class="language-cpp">class Subject; // Forward declaration
+
+class Observer {
+public:
+    virtual ~Observer() = default;
+    virtual void notify(const std::string& message) = 0;
+};
+
+class Subject {
+private:
+    std::vector&lt;std::weak_ptr&lt;Observer&gt;&gt; observers_;
+
+public:
+    void attach(std::shared_ptr&lt;Observer&gt; observer) {
+        observers_.push_back(observer);
+    }
+
+    void notify_all(const std::string& message) {
+        // Remove expired observers and notify valid ones
+        observers_.erase(
+            std::remove_if(observers_.begin(), observers_.end(),
+                [&message](std::weak_ptr&lt;Observer&gt;& weak_obs) {
+                    if (auto obs = weak_obs.lock()) {
+                        obs-&gt;notify(message);
+                        return false; // Keep this observer
+                    }
+                    return true; // Remove expired observer
+                }),
+            observers_.end()
+        );
+    }
+
+    size_t observer_count() const {
+        return std::count_if(observers_.begin(), observers_.end(),
+            [](const std::weak_ptr&lt;Observer&gt;& weak_obs) {
+                return !weak_obs.expired();
+            });
+    }
+};
+
+class ConcreteObserver : public Observer {
+private:
+    std::string name_;
+public:
+    ConcreteObserver(const std::string& name) : name_(name) {}
+
+    void notify(const std::string& message) override {
+        std::cout &lt;&lt; name_ &lt;&lt; " received: " &lt;&lt; message &lt;&lt; std::endl;
+    }
+
+    ~ConcreteObserver() {
+        std::cout &lt;&lt; name_ &lt;&lt; " observer destroyed" &lt;&lt; std::endl;
+    }
+};
+
+// Usage
+Subject subject;
+
+{
+    auto obs1 = std::make_shared&lt;ConcreteObserver&gt;("Observer1");
+    auto obs2 = std::make_shared&lt;ConcreteObserver&gt;("Observer2");
+
+    subject.attach(obs1);
+    subject.attach(obs2);
+
+    subject.notify_all("Hello!");
+    std::cout &lt;&lt; "Active observers: " &lt;&lt; subject.observer_count() &lt;&lt; std::endl; // 2
+} // obs1 and obs2 go out of scope
+
+subject.notify_all("Anyone there?");
+std::cout &lt;&lt; "Active observers: " &lt;&lt; subject.observer_count() &lt;&lt; std::endl; // 0</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Performance Considerations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">make_shared vs shared_ptr Constructor</h5>
+                    <p class="text-gray-400 mt-2 mb-3">make_shared is more efficient as it allocates object and control block together.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;chrono&gt;
+
+class LargeObject {
+    std::array&lt;int, 1000&gt; data;
+public:
+    LargeObject() { data.fill(42); }
+};
+
+void benchmark_creation() {
+    const int iterations = 100000;
+
+    // Benchmark make_shared
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i &lt; iterations; ++i) {
+        auto ptr = std::make_shared&lt;LargeObject&gt;();
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto make_shared_time = std::chrono::duration_cast&lt;std::chrono::microseconds&gt;(end - start);
+
+    // Benchmark shared_ptr constructor
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i &lt; iterations; ++i) {
+        std::shared_ptr&lt;LargeObject&gt; ptr(new LargeObject());
+    }
+    end = std::chrono::high_resolution_clock::now();
+    auto constructor_time = std::chrono::duration_cast&lt;std::chrono::microseconds&gt;(end - start);
+
+    std::cout &lt;&lt; "make_shared time: " &lt;&lt; make_shared_time.count() &lt;&lt; " μs" &lt;&lt; std::endl;
+    std::cout &lt;&lt; "constructor time: " &lt;&lt; constructor_time.count() &lt;&lt; " μs" &lt;&lt; std::endl;
+
+    // make_shared advantages:
+    // 1. Single allocation for object + control block
+    // 2. Better cache locality
+    // 3. Exception safe
+    // 4. Slightly less memory overhead
+}
+
+// Memory layout comparison
+void memory_layout_demo() {
+    // shared_ptr with new: Two separate allocations
+    auto ptr1 = std::shared_ptr&lt;int&gt;(new int(42));
+
+    // make_shared: Single allocation
+    auto ptr2 = std::make_shared&lt;int&gt;(42);
+
+    std::cout &lt;&lt; "ptr1 object: " &lt;&lt; ptr1.get() &lt;&lt; std::endl;
+    std::cout &lt;&lt; "ptr2 object: " &lt;&lt; ptr2.get() &lt;&lt; std::endl;
+
+    // Control blocks are allocated separately for ptr1,
+    // together with object for ptr2
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Overhead Analysis</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Understanding the costs of different smart pointer types.</p>
+                    <pre class="ml-4"><code class="language-cpp">void overhead_analysis() {
+    std::cout &lt;&lt; "Pointer sizes:" &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Raw pointer: " &lt;&lt; sizeof(int*) &lt;&lt; " bytes" &lt;&lt; std::endl;
+    std::cout &lt;&lt; "unique_ptr: " &lt;&lt; sizeof(std::unique_ptr&lt;int&gt;) &lt;&lt; " bytes" &lt;&lt; std::endl;
+    std::cout &lt;&lt; "shared_ptr: " &lt;&lt; sizeof(std::shared_ptr&lt;int&gt;) &lt;&lt; " bytes" &lt;&lt; std::endl;
+    std::cout &lt;&lt; "weak_ptr: " &lt;&lt; sizeof(std::weak_ptr&lt;int&gt;) &lt;&lt; " bytes" &lt;&lt; std::endl;
+
+    // Typical sizes (on 64-bit system):
+    // Raw pointer: 8 bytes
+    // unique_ptr: 8 bytes (same as raw pointer for default deleter)
+    // shared_ptr: 16 bytes (pointer + control block pointer)
+    // weak_ptr: 16 bytes (pointer + control block pointer)
+
+    // Additional memory overhead:
+    // shared_ptr control block: ~24 bytes (reference counts, deleter, etc.)
+    // weak_ptr doesn't add overhead beyond shared_ptr's control block
+}
+
+// Performance comparison
+template&lt;typename SmartPtr&gt;
+void benchmark_access(const std::string& name) {
+    const int iterations = 10000000;
+    SmartPtr ptr; // Specialized for each smart pointer type
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i &lt; iterations; ++i) {
+        volatile auto val = *ptr; // Prevent optimization
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto time = std::chrono::duration_cast&lt;std::chrono::microseconds&gt;(end - start);
+    std::cout &lt;&lt; name &lt;&lt; " access time: " &lt;&lt; time.count() &lt;&lt; " μs" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Common Patterns and Best Practices</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Factory Functions and RAII</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Using smart pointers with factory functions for safe resource management.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Resource wrapper
+class Database {
+public:
+    Database(const std::string& connection_string) {
+        // Simulate database connection
+        std::cout &lt;&lt; "Connected to: " &lt;&lt; connection_string &lt;&lt; std::endl;
+    }
+
+    ~Database() {
+        std::cout &lt;&lt; "Database connection closed" &lt;&lt; std::endl;
+    }
+
+    void query(const std::string& sql) {
+        std::cout &lt;&lt; "Executing: " &lt;&lt; sql &lt;&lt; std::endl;
+    }
+};
+
+// Factory function returning unique_ptr
+std::unique_ptr&lt;Database&gt; create_database(const std::string& conn_str) {
+    return std::make_unique&lt;Database&gt;(conn_str);
+}
+
+// Factory function returning shared_ptr for shared resources
+std::shared_ptr&lt;Database&gt; create_shared_database(const std::string& conn_str) {
+    static std::weak_ptr&lt;Database&gt; cached_db;
+
+    if (auto existing = cached_db.lock()) {
+        std::cout &lt;&lt; "Reusing existing database connection" &lt;&lt; std::endl;
+        return existing;
+    }
+
+    auto new_db = std::make_shared&lt;Database&gt;(conn_str);
+    cached_db = new_db;
+    return new_db;
+}
+
+// RAII with smart pointers
+void database_operations() {
+    auto db = create_database("localhost:5432");
+    db-&gt;query("SELECT * FROM users");
+
+    // Multiple components sharing database
+    auto shared_db1 = create_shared_database("localhost:5432");
+    auto shared_db2 = create_shared_database("localhost:5432"); // Reuses same connection
+
+    shared_db1-&gt;query("SELECT * FROM orders");
+    shared_db2-&gt;query("SELECT * FROM products");
+} // All resources automatically cleaned up</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Pimpl Idiom with Smart Pointers</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Using unique_ptr to implement the Pimpl (Pointer to Implementation) idiom.</p>
+                    <pre class="ml-4"><code class="language-cpp">// In header file (Widget.h)
+class Widget {
+public:
+    Widget();
+    ~Widget(); // Must be defined in .cpp file
+    Widget(const Widget& other);
+    Widget& operator=(const Widget& other);
+    Widget(Widget&& other) noexcept;
+    Widget& operator=(Widget&& other) noexcept;
+
+    void do_something();
+    void set_value(int value);
+
+private:
+    struct Impl; // Forward declaration
+    std::unique_ptr&lt;Impl&gt; pimpl_;
+};
+
+// In implementation file (Widget.cpp)
+struct Widget::Impl {
+    int value_;
+    std::vector&lt;std::string&gt; data_;
+    // Private implementation details
+
+    void internal_method() {
+        std::cout &lt;&lt; "Internal processing with value: " &lt;&lt; value_ &lt;&lt; std::endl;
+    }
+};
+
+Widget::Widget() : pimpl_(std::make_unique&lt;Impl&gt;()) {}
+
+Widget::~Widget() = default; // Destructor must be in .cpp where Impl is complete
+
+Widget::Widget(const Widget& other)
+    : pimpl_(std::make_unique&lt;Impl&gt;(*other.pimpl_)) {}
+
+Widget& Widget::operator=(const Widget& other) {
+    if (this != &other) {
+        *pimpl_ = *other.pimpl_;
+    }
+    return *this;
+}
+
+Widget::Widget(Widget&& other) noexcept = default;
+Widget& Widget::operator=(Widget&& other) noexcept = default;
+
+void Widget::do_something() {
+    pimpl_-&gt;internal_method();
+}
+
+void Widget::set_value(int value) {
+    pimpl_-&gt;value_ = value;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Exception Safety</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Smart pointers provide strong exception safety guarantees.</p>
+                    <pre class="ml-4"><code class="language-cpp">class Resource {
+public:
+    Resource(int id) : id_(id) {
+        if (id &lt; 0) {
+            throw std::invalid_argument("Invalid resource ID");
+        }
+        std::cout &lt;&lt; "Resource " &lt;&lt; id_ &lt;&lt; " created" &lt;&lt; std::endl;
+    }
+
+    ~Resource() {
+        std::cout &lt;&lt; "Resource " &lt;&lt; id_ &lt;&lt; " destroyed" &lt;&lt; std::endl;
+    }
+
+private:
+    int id_;
+};
+
+// Exception-safe function
+void exception_safe_operations() {
+    try {
+        // All these are exception-safe
+        auto ptr1 = std::make_unique&lt;Resource&gt;(1);
+        auto ptr2 = std::make_shared&lt;Resource&gt;(2);
+
+        // Even if this throws, ptr1 and ptr2 are automatically cleaned up
+        auto ptr3 = std::make_unique&lt;Resource&gt;(-1); // Throws exception
+
+    } catch (const std::exception& e) {
+        std::cout &lt;&lt; "Exception caught: " &lt;&lt; e.what() &lt;&lt; std::endl;
+        // Resources automatically cleaned up
+    }
+}
+
+// Dangerous pattern to avoid
+void dangerous_pattern() {
+    try {
+        // DON'T DO THIS - not exception safe
+        std::unique_ptr&lt;Resource&gt; ptr(new Resource(1));
+        process_data(new Resource(2)); // If process_data throws, Resource(2) leaks!
+    } catch (...) {
+        // Resource(2) might leak here
+    }
+}
+
+// Safe pattern
+void safe_pattern() {
+    try {
+        auto resource1 = std::make_unique&lt;Resource&gt;(1);
+        auto resource2 = std::make_unique&lt;Resource&gt;(2);
+        process_data(std::move(resource2)); // Exception safe
+    } catch (...) {
+        // All resources properly cleaned up
+    }
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Best Practices Summary</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Guidelines for effective smart pointer usage.</p>
+                    <pre class="ml-4"><code class="language-cpp">// 1. Prefer make_unique and make_shared
+auto good_unique = std::make_unique&lt;int&gt;(42);
+auto good_shared = std::make_shared&lt;int&gt;(42);
+
+// Avoid raw new
+// auto bad = std::unique_ptr&lt;int&gt;(new int(42)); // Less preferred
+
+// 2. Use unique_ptr by default, shared_ptr when sharing is needed
+std::unique_ptr&lt;Resource&gt; exclusive_resource;  // Default choice
+std::shared_ptr&lt;Resource&gt; shared_resource;     // When multiple owners needed
+
+// 3. Use weak_ptr to break cycles
+struct Node {
+    std::shared_ptr&lt;Node&gt; child;
+    std::weak_ptr&lt;Node&gt; parent; // Breaks cycle
+};
+
+// 4. Pass smart pointers appropriately
+void takes_ownership(std::unique_ptr&lt;Resource&gt; resource);  // Transfer ownership
+void uses_resource(const Resource& resource);              // Just use, don't pass smart pointer
+void might_share(std::shared_ptr&lt;Resource&gt; resource);      // Might extend lifetime
+
+// 5. Return smart pointers from factories
+std::unique_ptr&lt;Resource&gt; create_resource() {
+    return std::make_unique&lt;Resource&gt;(42);
+}
+
+// 6. Don't mix smart and raw pointers
+void dangerous_mixing() {
+    auto smart_ptr = std::make_unique&lt;int&gt;(42);
+    int* raw_ptr = smart_ptr.get();
+    smart_ptr.reset(); // raw_ptr is now dangling!
+    // *raw_ptr; // Undefined behavior
+}
+
+// 7. Custom deleters for special cleanup
+auto file_deleter = [](FILE* f) { if (f) fclose(f); };
+std::unique_ptr&lt;FILE, decltype(file_deleter)&gt; file(
+    fopen("test.txt", "r"), file_deleter
+);</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Interview Problems</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Implementing a Simple shared_ptr</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Understanding shared_ptr internals by implementing a simplified version.</p>
+                    <pre class="ml-4"><code class="language-cpp">template&lt;typename T&gt;
+class simple_shared_ptr {
+private:
+    T* ptr_;
+    size_t* ref_count_;
+
+    void cleanup() {
+        if (ref_count_ && --(*ref_count_) == 0) {
+            delete ptr_;
+            delete ref_count_;
+        }
+    }
+
+public:
+    // Constructor
+    explicit simple_shared_ptr(T* ptr = nullptr)
+        : ptr_(ptr), ref_count_(ptr ? new size_t(1) : nullptr) {}
+
+    // Copy constructor
+    simple_shared_ptr(const simple_shared_ptr& other)
+        : ptr_(other.ptr_), ref_count_(other.ref_count_) {
+        if (ref_count_) {
+            ++(*ref_count_);
+        }
+    }
+
+    // Assignment operator
+    simple_shared_ptr& operator=(const simple_shared_ptr& other) {
+        if (this != &other) {
+            cleanup();
+            ptr_ = other.ptr_;
+            ref_count_ = other.ref_count_;
+            if (ref_count_) {
+                ++(*ref_count_);
+            }
+        }
+        return *this;
+    }
+
+    // Destructor
+    ~simple_shared_ptr() {
+        cleanup();
+    }
+
+    // Operators
+    T& operator*() const { return *ptr_; }
+    T* operator-&gt;() const { return ptr_; }
+    T* get() const { return ptr_; }
+
+    size_t use_count() const {
+        return ref_count_ ? *ref_count_ : 0;
+    }
+
+    void reset(T* ptr = nullptr) {
+        cleanup();
+        ptr_ = ptr;
+        ref_count_ = ptr ? new size_t(1) : nullptr;
+    }
+};
+
+// Usage example
+void test_simple_shared_ptr() {
+    simple_shared_ptr&lt;int&gt; ptr1(new int(42));
+    std::cout &lt;&lt; "Count: " &lt;&lt; ptr1.use_count() &lt;&lt; std::endl; // 1
+
+    {
+        simple_shared_ptr&lt;int&gt; ptr2 = ptr1;
+        std::cout &lt;&lt; "Count: " &lt;&lt; ptr1.use_count() &lt;&lt; std::endl; // 2
+    }
+
+    std::cout &lt;&lt; "Count: " &lt;&lt; ptr1.use_count() &lt;&lt; std::endl; // 1
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Memory Pool with Smart Pointers</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Implementing a memory pool using smart pointers for efficient allocation.</p>
+                    <pre class="ml-4"><code class="language-cpp">template&lt;typename T, size_t PoolSize = 1024&gt;
+class ObjectPool {
+private:
+    alignas(T) char storage_[PoolSize * sizeof(T)];
+    std::bitset&lt;PoolSize&gt; allocated_;
+    size_t next_free_ = 0;
+
+    struct PoolDeleter {
+        ObjectPool* pool;
+
+        void operator()(T* ptr) {
+            if (pool && ptr) {
+                pool-&gt;deallocate(ptr);
+            }
+        }
+    };
+
+public:
+    using unique_ptr_type = std::unique_ptr&lt;T, PoolDeleter&gt;;
+
+    template&lt;typename... Args&gt;
+    unique_ptr_type allocate(Args&&... args) {
+        // Find free slot
+        for (size_t i = next_free_; i &lt; PoolSize; ++i) {
+            if (!allocated_[i]) {
+                allocated_[i] = true;
+                next_free_ = i + 1;
+
+                T* ptr = reinterpret_cast&lt;T*&gt;(&storage_[i * sizeof(T)]);
+                new(ptr) T(std::forward&lt;Args&gt;(args)...);
+
+                return unique_ptr_type(ptr, PoolDeleter{this});
+            }
+        }
+
+        throw std::bad_alloc(); // Pool exhausted
+    }
+
+    void deallocate(T* ptr) {
+        if (!ptr) return;
+
+        // Calculate index
+        char* byte_ptr = reinterpret_cast&lt;char*&gt;(ptr);
+        size_t index = (byte_ptr - storage_) / sizeof(T);
+
+        if (index &lt; PoolSize && allocated_[index]) {
+            ptr-&gt;~T(); // Explicit destructor call
+            allocated_[index] = false;
+            next_free_ = std::min(next_free_, index);
+        }
+    }
+
+    size_t available() const {
+        return PoolSize - allocated_.count();
+    }
+};
+
+// Usage
+void test_object_pool() {
+    ObjectPool&lt;std::string, 10&gt; pool;
+
+    std::vector&lt;ObjectPool&lt;std::string, 10&gt;::unique_ptr_type&gt; objects;
+
+    // Allocate objects from pool
+    for (int i = 0; i &lt; 5; ++i) {
+        objects.push_back(pool.allocate("Object " + std::to_string(i)));
+    }
+
+    std::cout &lt;&lt; "Available slots: " &lt;&lt; pool.available() &lt;&lt; std::endl; // 5
+
+    // Objects are automatically returned to pool when unique_ptrs are destroyed
+    objects.clear();
+
+    std::cout &lt;&lt; "Available slots: " &lt;&lt; pool.available() &lt;&lt; std::endl; // 10
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

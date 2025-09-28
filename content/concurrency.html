@@ -1,0 +1,1125 @@
+<div id="concurrency-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">Concurrency In-Depth</h2>
+    <p class="mb-4 text-gray-400">C++ provides comprehensive support for concurrent programming through threads, synchronization primitives, and atomic operations. Modern C++ makes concurrent programming safer and more accessible. Headers: #include &lt;thread&gt;, #include &lt;mutex&gt;, #include &lt;atomic&gt;, #include &lt;future&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Benefits:</strong> Parallel execution, improved performance on multi-core systems, better resource utilization, responsive user interfaces, and efficient I/O handling.</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">std::thread Basics</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Creating and Managing Threads</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Basic thread creation, joining, and detaching.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;thread&gt;
+#include &lt;iostream&gt;
+#include &lt;chrono&gt;
+
+// Function to run in a thread
+void worker_function(int id) {
+    for (int i = 0; i &lt; 5; ++i) {
+        std::cout &lt;&lt; "Thread " &lt;&lt; id &lt;&lt; " iteration " &lt;&lt; i &lt;&lt; std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
+
+void basic_thread_usage() {
+    // Create a thread
+    std::thread t1(worker_function, 1);
+
+    // Create thread with lambda
+    std::thread t2([](int id) {
+        for (int i = 0; i &lt; 3; ++i) {
+            std::cout &lt;&lt; "Lambda thread " &lt;&lt; id &lt;&lt; " iteration " &lt;&lt; i &lt;&lt; std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        }
+    }, 2);
+
+    // Wait for threads to complete
+    t1.join();
+    t2.join();
+
+    std::cout &lt;&lt; "All threads completed" &lt;&lt; std::endl;
+}
+
+// Detached threads
+void detached_thread_example() {
+    std::thread background_thread([]() {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout &lt;&lt; "Background task completed" &lt;&lt; std::endl;
+    });
+
+    // Detach the thread - it runs independently
+    background_thread.detach();
+
+    // Main thread continues immediately
+    std::cout &lt;&lt; "Main thread continues" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Thread Properties and Hardware Info</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Getting information about threads and hardware capabilities.</p>
+                    <pre class="ml-4"><code class="language-cpp">void thread_info() {
+    // Hardware concurrency
+    unsigned int hw_threads = std::thread::hardware_concurrency();
+    std::cout &lt;&lt; "Hardware threads: " &lt;&lt; hw_threads &lt;&lt; std::endl;
+
+    // Current thread ID
+    auto main_id = std::this_thread::get_id();
+    std::cout &lt;&lt; "Main thread ID: " &lt;&lt; main_id &lt;&lt; std::endl;
+
+    std::thread t([]() {
+        auto thread_id = std::this_thread::get_id();
+        std::cout &lt;&lt; "Worker thread ID: " &lt;&lt; thread_id &lt;&lt; std::endl;
+    });
+
+    // Check if thread is joinable
+    if (t.joinable()) {
+        std::cout &lt;&lt; "Thread is joinable" &lt;&lt; std::endl;
+        t.join();
+    }
+}
+
+// Thread-safe singleton for getting optimal thread count
+class ThreadPool {
+private:
+    static size_t get_optimal_thread_count() {
+        const auto hw_threads = std::thread::hardware_concurrency();
+        return hw_threads ? hw_threads : 4; // Fallback to 4 if unknown
+    }
+
+public:
+    static size_t recommended_threads() {
+        static const size_t count = get_optimal_thread_count();
+        return count;
+    }
+};</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Synchronization Primitives</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Mutexes and Locks</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Protecting shared data with various types of mutexes and lock guards.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;mutex&gt;
+#include &lt;shared_mutex&gt;
+#include &lt;vector&gt;
+
+class ThreadSafeCounter {
+private:
+    mutable std::mutex mutex_;
+    int count_ = 0;
+
+public:
+    void increment() {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        ++count_;
+    }
+
+    void add(int value) {
+        std::unique_lock&lt;std::mutex&gt; lock(mutex_);
+        count_ += value;
+        // lock automatically released at end of scope
+    }
+
+    int get() const {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        return count_;
+    }
+
+    // Try to increment without blocking
+    bool try_increment() {
+        if (mutex_.try_lock()) {
+            ++count_;
+            mutex_.unlock();
+            return true;
+        }
+        return false;
+    }
+};
+
+// Reader-Writer lock example
+class ThreadSafeDatabase {
+private:
+    mutable std::shared_mutex mutex_;
+    std::vector&lt;std::string&gt; data_;
+
+public:
+    void write(const std::string& item) {
+        std::unique_lock&lt;std::shared_mutex&gt; lock(mutex_); // Exclusive lock
+        data_.push_back(item);
+    }
+
+    std::string read(size_t index) const {
+        std::shared_lock&lt;std::shared_mutex&gt; lock(mutex_); // Shared lock
+        if (index &lt; data_.size()) {
+            return data_[index];
+        }
+        return "";
+    }
+
+    size_t size() const {
+        std::shared_lock&lt;std::shared_mutex&gt; lock(mutex_); // Shared lock
+        return data_.size();
+    }
+};
+
+// Multiple mutex locking to avoid deadlock
+void safe_transfer(ThreadSafeCounter& from, ThreadSafeCounter& to, int amount) {
+    // Use std::lock to acquire both mutexes safely
+    std::lock(from.mutex_, to.mutex_);
+
+    // Now adopt the locks
+    std::lock_guard&lt;std::mutex&gt; lock1(from.mutex_, std::adopt_lock);
+    std::lock_guard&lt;std::mutex&gt; lock2(to.mutex_, std::adopt_lock);
+
+    from.add(-amount);
+    to.add(amount);
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Condition Variables</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Coordinating threads with condition variables for efficient waiting and signaling.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;condition_variable&gt;
+#include &lt;queue&gt;
+
+template&lt;typename T&gt;
+class ThreadSafeQueue {
+private:
+    mutable std::mutex mutex_;
+    std::queue&lt;T&gt; queue_;
+    std::condition_variable condition_;
+
+public:
+    void push(T item) {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        queue_.push(item);
+        condition_.notify_one(); // Wake up one waiting thread
+    }
+
+    T wait_and_pop() {
+        std::unique_lock&lt;std::mutex&gt; lock(mutex_);
+
+        // Wait until queue is not empty
+        condition_.wait(lock, [this] { return !queue_.empty(); });
+
+        T result = queue_.front();
+        queue_.pop();
+        return result;
+    }
+
+    bool try_pop(T& item) {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        if (queue_.empty()) {
+            return false;
+        }
+        item = queue_.front();
+        queue_.pop();
+        return true;
+    }
+
+    bool empty() const {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        return queue_.empty();
+    }
+
+    void notify_all() {
+        condition_.notify_all(); // Wake up all waiting threads
+    }
+};
+
+// Producer-Consumer example
+void producer_consumer_example() {
+    ThreadSafeQueue&lt;int&gt; queue;
+    bool done = false;
+    std::mutex done_mutex;
+
+    // Producer thread
+    std::thread producer([&queue, &done, &done_mutex]() {
+        for (int i = 0; i &lt; 10; ++i) {
+            queue.push(i);
+            std::cout &lt;&lt; "Produced: " &lt;&lt; i &lt;&lt; std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        std::lock_guard&lt;std::mutex&gt; lock(done_mutex);
+        done = true;
+        queue.notify_all(); // Wake up consumers
+    });
+
+    // Consumer thread
+    std::thread consumer([&queue, &done, &done_mutex]() {
+        while (true) {
+            {
+                std::lock_guard&lt;std::mutex&gt; lock(done_mutex);
+                if (done && queue.empty()) {
+                    break;
+                }
+            }
+
+            try {
+                int item = queue.wait_and_pop();
+                std::cout &lt;&lt; "Consumed: " &lt;&lt; item &lt;&lt; std::endl;
+            } catch (...) {
+                break; // Handle potential exceptions
+            }
+        }
+    });
+
+    producer.join();
+    consumer.join();
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Atomic Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Lock-Free Programming with std::atomic</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Using atomic variables for lock-free thread-safe operations.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;atomic&gt;
+
+class LockFreeCounter {
+private:
+    std::atomic&lt;int&gt; count_{0};
+
+public:
+    void increment() {
+        count_.fetch_add(1); // Atomic increment
+    }
+
+    void add(int value) {
+        count_.fetch_add(value);
+    }
+
+    int get() const {
+        return count_.load(); // Atomic read
+    }
+
+    void set(int value) {
+        count_.store(value); // Atomic write
+    }
+
+    // Compare and swap
+    bool compare_and_swap(int expected, int desired) {
+        return count_.compare_exchange_weak(expected, desired);
+    }
+};
+
+// Memory ordering examples
+class MemoryOrderingExample {
+private:
+    std::atomic&lt;bool&gt; flag_{false};
+    std::atomic&lt;int&gt; data_{0};
+
+public:
+    // Producer with memory ordering
+    void produce(int value) {
+        data_.store(value, std::memory_order_relaxed); // Can be reordered
+        flag_.store(true, std::memory_order_release);  // Release semantics
+    }
+
+    // Consumer with memory ordering
+    int consume() {
+        while (!flag_.load(std::memory_order_acquire)) { // Acquire semantics
+            std::this_thread::yield();
+        }
+        return data_.load(std::memory_order_relaxed);
+    }
+
+    // Sequential consistency (default)
+    void strong_operation() {
+        data_.store(42); // memory_order_seq_cst by default
+        if (flag_.load()) { // memory_order_seq_cst by default
+            // Guaranteed ordering
+        }
+    }
+};
+
+// Lock-free stack implementation
+template&lt;typename T&gt;
+class LockFreeStack {
+private:
+    struct Node {
+        T data;
+        Node* next;
+        Node(const T& data) : data(data), next(nullptr) {}
+    };
+
+    std::atomic&lt;Node*&gt; head_{nullptr};
+
+public:
+    void push(const T& data) {
+        Node* new_node = new Node(data);
+        new_node-&gt;next = head_.load();
+
+        while (!head_.compare_exchange_weak(new_node-&gt;next, new_node)) {
+            // Retry if another thread modified head
+        }
+    }
+
+    bool pop(T& result) {
+        Node* old_head = head_.load();
+
+        while (old_head && !head_.compare_exchange_weak(old_head, old_head-&gt;next)) {
+            // Retry if another thread modified head
+        }
+
+        if (old_head) {
+            result = old_head-&gt;data;
+            delete old_head;
+            return true;
+        }
+        return false;
+    }
+
+    ~LockFreeStack() {
+        while (head_) {
+            Node* temp = head_;
+            head_ = head_-&gt;next;
+            delete temp;
+        }
+    }
+};</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Atomic Smart Pointers</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Thread-safe operations on shared_ptr using atomic operations.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;memory&gt;
+
+class AtomicSharedPtrExample {
+private:
+    std::atomic&lt;std::shared_ptr&lt;int&gt;&gt; atomic_ptr_;
+
+public:
+    void set_value(int value) {
+        auto new_ptr = std::make_shared&lt;int&gt;(value);
+        atomic_ptr_.store(new_ptr);
+    }
+
+    std::shared_ptr&lt;int&gt; get_value() {
+        return atomic_ptr_.load();
+    }
+
+    bool compare_and_swap(std::shared_ptr&lt;int&gt; expected, std::shared_ptr&lt;int&gt; desired) {
+        return atomic_ptr_.compare_exchange_weak(expected, desired);
+    }
+};
+
+// Alternative using std::atomic_* functions
+class SharedPtrAtomics {
+private:
+    std::shared_ptr&lt;int&gt; ptr_;
+
+public:
+    void set_value(int value) {
+        auto new_ptr = std::make_shared&lt;int&gt;(value);
+        std::atomic_store(&ptr_, new_ptr);
+    }
+
+    std::shared_ptr&lt;int&gt; get_value() {
+        return std::atomic_load(&ptr_);
+    }
+
+    bool update_if_equal(int old_value, int new_value) {
+        auto current = std::atomic_load(&ptr_);
+        if (current && *current == old_value) {
+            auto new_ptr = std::make_shared&lt;int&gt;(new_value);
+            return std::atomic_compare_exchange_weak(&ptr_, &current, new_ptr);
+        }
+        return false;
+    }
+};</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Futures and Promises</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">std::future and std::promise</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Asynchronous communication between threads using futures and promises.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;future&gt;
+
+// Basic promise/future example
+void promise_future_example() {
+    std::promise&lt;int&gt; promise;
+    std::future&lt;int&gt; future = promise.get_future();
+
+    // Start a thread that will set the promise
+    std::thread worker([&promise]() {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        promise.set_value(42); // Set the result
+    });
+
+    // Main thread waits for the result
+    std::cout &lt;&lt; "Waiting for result..." &lt;&lt; std::endl;
+    int result = future.get(); // Blocks until value is available
+    std::cout &lt;&lt; "Result: " &lt;&lt; result &lt;&lt; std::endl;
+
+    worker.join();
+}
+
+// Exception handling with promises
+void promise_exception_example() {
+    std::promise&lt;int&gt; promise;
+    std::future&lt;int&gt; future = promise.get_future();
+
+    std::thread worker([&promise]() {
+        try {
+            throw std::runtime_error("Something went wrong!");
+        } catch (...) {
+            promise.set_exception(std::current_exception());
+        }
+    });
+
+    try {
+        int result = future.get(); // Will rethrow the exception
+    } catch (const std::exception& e) {
+        std::cout &lt;&lt; "Caught exception: " &lt;&lt; e.what() &lt;&lt; std::endl;
+    }
+
+    worker.join();
+}
+
+// Multiple results with shared_future
+void shared_future_example() {
+    std::promise&lt;int&gt; promise;
+    std::shared_future&lt;int&gt; shared_future = promise.get_future().share();
+
+    auto worker = [shared_future](int id) {
+        int result = shared_future.get(); // Multiple threads can wait
+        std::cout &lt;&lt; "Thread " &lt;&lt; id &lt;&lt; " got result: " &lt;&lt; result &lt;&lt; std::endl;
+    };
+
+    // Start multiple threads waiting for the same result
+    std::thread t1(worker, 1);
+    std::thread t2(worker, 2);
+    std::thread t3(worker, 3);
+
+    // Set the value after a delay
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    promise.set_value(100);
+
+    t1.join();
+    t2.join();
+    t3.join();
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">std::async and Launch Policies</h5>
+                    <p class="text-gray-400 mt-2 mb-3">High-level asynchronous task execution with std::async.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Expensive computation function
+int fibonacci(int n) {
+    if (n &lt;= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+void async_examples() {
+    // Deferred execution - runs when .get() is called
+    auto deferred_future = std::async(std::launch::deferred, fibonacci, 35);
+
+    // Async execution - may run immediately in another thread
+    auto async_future = std::async(std::launch::async, fibonacci, 35);
+
+    // Let implementation decide
+    auto auto_future = std::async(fibonacci, 35);
+
+    std::cout &lt;&lt; "Futures created, continuing with other work..." &lt;&lt; std::endl;
+
+    // Do other work
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    // Get results
+    std::cout &lt;&lt; "Deferred result: " &lt;&lt; deferred_future.get() &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Async result: " &lt;&lt; async_future.get() &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Auto result: " &lt;&lt; auto_future.get() &lt;&lt; std::endl;
+}
+
+// Parallel computation example
+void parallel_computation() {
+    std::vector&lt;std::future&lt;int&gt;&gt; futures;
+
+    // Start multiple async computations
+    for (int i = 30; i &lt; 35; ++i) {
+        futures.push_back(std::async(std::launch::async, fibonacci, i));
+    }
+
+    // Collect results
+    for (size_t i = 0; i &lt; futures.size(); ++i) {
+        std::cout &lt;&lt; "fibonacci(" &lt;&lt; (30 + i) &lt;&lt; ") = "
+                  &lt;&lt; futures[i].get() &lt;&lt; std::endl;
+    }
+}
+
+// Timeout with future
+void future_timeout_example() {
+    auto future = std::async(std::launch::async, []() {
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        return 42;
+    });
+
+    // Wait with timeout
+    if (future.wait_for(std::chrono::seconds(1)) == std::future_status::ready) {
+        std::cout &lt;&lt; "Result: " &lt;&lt; future.get() &lt;&lt; std::endl;
+    } else {
+        std::cout &lt;&lt; "Timeout! Still waiting..." &lt;&lt; std::endl;
+        std::cout &lt;&lt; "Final result: " &lt;&lt; future.get() &lt;&lt; std::endl;
+    }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Thread Pools and Task Management</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Simple Thread Pool Implementation</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Creating a basic thread pool for efficient task execution.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;functional&gt;
+
+class SimpleThreadPool {
+private:
+    std::vector&lt;std::thread&gt; workers;
+    ThreadSafeQueue&lt;std::function&lt;void()&gt;&gt; tasks;
+    std::atomic&lt;bool&gt; stop{false};
+
+public:
+    SimpleThreadPool(size_t num_threads = std::thread::hardware_concurrency()) {
+        for (size_t i = 0; i &lt; num_threads; ++i) {
+            workers.emplace_back([this]() {
+                while (!stop) {
+                    std::function&lt;void()&gt; task;
+                    if (tasks.try_pop(task)) {
+                        task();
+                    } else {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    }
+                }
+            });
+        }
+    }
+
+    template&lt;typename F, typename... Args&gt;
+    auto enqueue(F&& f, Args&&... args) -&gt; std::future&lt;typename std::result_of&lt;F(Args...)&gt;::type&gt; {
+        using return_type = typename std::result_of&lt;F(Args...)&gt;::type;
+
+        auto task = std::make_shared&lt;std::packaged_task&lt;return_type()&gt;&gt;(
+            std::bind(std::forward&lt;F&gt;(f), std::forward&lt;Args&gt;(args)...)
+        );
+
+        std::future&lt;return_type&gt; result = task-&gt;get_future();
+
+        tasks.push([task]() { (*task)(); });
+
+        return result;
+    }
+
+    ~SimpleThreadPool() {
+        stop = true;
+        tasks.notify_all(); // Wake up all waiting threads
+
+        for (std::thread& worker : workers) {
+            if (worker.joinable()) {
+                worker.join();
+            }
+        }
+    }
+};
+
+// Usage example
+void thread_pool_example() {
+    SimpleThreadPool pool(4);
+
+    // Submit tasks
+    auto result1 = pool.enqueue([](int n) {
+        return fibonacci(n);
+    }, 30);
+
+    auto result2 = pool.enqueue([](const std::string& msg) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        return msg + " processed";
+    }, "Task");
+
+    // Get results
+    std::cout &lt;&lt; "Fibonacci result: " &lt;&lt; result1.get() &lt;&lt; std::endl;
+    std::cout &lt;&lt; "String result: " &lt;&lt; result2.get() &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Work-Stealing Queue</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Advanced thread pool with work-stealing for better load balancing.</p>
+                    <pre class="ml-4"><code class="language-cpp">template&lt;typename T&gt;
+class WorkStealingQueue {
+private:
+    mutable std::mutex mutex_;
+    std::deque&lt;T&gt; queue_;
+
+public:
+    void push_back(T item) {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        queue_.push_back(std::move(item));
+    }
+
+    bool try_pop_front(T& item) {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        if (queue_.empty()) {
+            return false;
+        }
+        item = std::move(queue_.front());
+        queue_.pop_front();
+        return true;
+    }
+
+    bool try_pop_back(T& item) {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        if (queue_.empty()) {
+            return false;
+        }
+        item = std::move(queue_.back());
+        queue_.pop_back();
+        return true;
+    }
+
+    bool empty() const {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        return queue_.empty();
+    }
+};
+
+class WorkStealingThreadPool {
+private:
+    using Task = std::function&lt;void()&gt;;
+
+    std::vector&lt;std::unique_ptr&lt;WorkStealingQueue&lt;Task&gt;&gt;&gt; work_queues;
+    std::vector&lt;std::thread&gt; workers;
+    std::atomic&lt;bool&gt; stop{false};
+
+    thread_local static size_t thread_index;
+    thread_local static WorkStealingQueue&lt;Task&gt;* local_queue;
+
+    void worker_thread(size_t index) {
+        thread_index = index;
+        local_queue = work_queues[index].get();
+
+        while (!stop) {
+            Task task;
+            if (pop_task_from_local_queue(task) ||
+                pop_task_from_other_queue(task)) {
+                task();
+            } else {
+                std::this_thread::yield();
+            }
+        }
+    }
+
+    bool pop_task_from_local_queue(Task& task) {
+        return local_queue && local_queue-&gt;try_pop_front(task);
+    }
+
+    bool pop_task_from_other_queue(Task& task) {
+        for (size_t i = 0; i &lt; work_queues.size(); ++i) {
+            size_t index = (thread_index + i + 1) % work_queues.size();
+            if (work_queues[index]-&gt;try_pop_back(task)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+public:
+    WorkStealingThreadPool(size_t num_threads = std::thread::hardware_concurrency()) {
+        work_queues.resize(num_threads);
+        for (size_t i = 0; i &lt; num_threads; ++i) {
+            work_queues[i] = std::make_unique&lt;WorkStealingQueue&lt;Task&gt;&gt;();
+        }
+
+        workers.reserve(num_threads);
+        for (size_t i = 0; i &lt; num_threads; ++i) {
+            workers.emplace_back(&WorkStealingThreadPool::worker_thread, this, i);
+        }
+    }
+
+    template&lt;typename F&gt;
+    std::future&lt;typename std::result_of&lt;F()&gt;::type&gt; submit(F&& f) {
+        using return_type = typename std::result_of&lt;F()&gt;::type;
+
+        auto task = std::make_shared&lt;std::packaged_task&lt;return_type()&gt;&gt;(
+            std::forward&lt;F&gt;(f)
+        );
+
+        std::future&lt;return_type&gt; result = task-&gt;get_future();
+
+        if (local_queue) {
+            local_queue-&gt;push_back([task]() { (*task)(); });
+        } else {
+            work_queues[0]-&gt;push_back([task]() { (*task)(); });
+        }
+
+        return result;
+    }
+
+    ~WorkStealingThreadPool() {
+        stop = true;
+        for (auto& worker : workers) {
+            if (worker.joinable()) {
+                worker.join();
+            }
+        }
+    }
+};
+
+thread_local size_t WorkStealingThreadPool::thread_index = 0;
+thread_local WorkStealingQueue&lt;std::function&lt;void()&gt;&gt;* WorkStealingThreadPool::local_queue = nullptr;</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Common Patterns and Best Practices</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">RAII Thread Management</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Safe thread management using RAII principles.</p>
+                    <pre class="ml-4"><code class="language-cpp">class JoiningThread {
+private:
+    std::thread thread_;
+
+public:
+    template&lt;typename F, typename... Args&gt;
+    JoiningThread(F&& f, Args&&... args)
+        : thread_(std::forward&lt;F&gt;(f), std::forward&lt;Args&gt;(args)...) {}
+
+    ~JoiningThread() {
+        if (thread_.joinable()) {
+            thread_.join();
+        }
+    }
+
+    // Non-copyable, movable
+    JoiningThread(const JoiningThread&) = delete;
+    JoiningThread& operator=(const JoiningThread&) = delete;
+
+    JoiningThread(JoiningThread&& other) noexcept : thread_(std::move(other.thread_)) {}
+    JoiningThread& operator=(JoiningThread&& other) noexcept {
+        if (thread_.joinable()) {
+            thread_.join();
+        }
+        thread_ = std::move(other.thread_);
+        return *this;
+    }
+
+    std::thread::id get_id() const { return thread_.get_id(); }
+    void detach() { thread_.detach(); }
+};
+
+// Scoped thread group
+class ThreadGroup {
+private:
+    std::vector&lt;JoiningThread&gt; threads_;
+
+public:
+    template&lt;typename F, typename... Args&gt;
+    void create_thread(F&& f, Args&&... args) {
+        threads_.emplace_back(std::forward&lt;F&gt;(f), std::forward&lt;Args&gt;(args)...);
+    }
+
+    void join_all() {
+        // RAII ensures all threads are joined automatically
+        threads_.clear();
+    }
+
+    size_t size() const { return threads_.size(); }
+};</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Avoiding Common Pitfalls</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Best practices for safe concurrent programming.</p>
+                    <pre class="ml-4"><code class="language-cpp">// 1. Deadlock avoidance
+class BankAccount {
+private:
+    mutable std::mutex mutex_;
+    int balance_;
+    int account_id_;
+
+public:
+    BankAccount(int id, int initial_balance)
+        : account_id_(id), balance_(initial_balance) {}
+
+    void transfer_to(BankAccount& other, int amount) {
+        // Always lock in same order to avoid deadlock
+        if (account_id_ &lt; other.account_id_) {
+            std::lock(mutex_, other.mutex_);
+            std::lock_guard&lt;std::mutex&gt; lock1(mutex_, std::adopt_lock);
+            std::lock_guard&lt;std::mutex&gt; lock2(other.mutex_, std::adopt_lock);
+
+            if (balance_ &gt;= amount) {
+                balance_ -= amount;
+                other.balance_ += amount;
+            }
+        } else {
+            std::lock(other.mutex_, mutex_);
+            std::lock_guard&lt;std::mutex&gt; lock1(other.mutex_, std::adopt_lock);
+            std::lock_guard&lt;std::mutex&gt; lock2(mutex_, std::adopt_lock);
+
+            if (balance_ &gt;= amount) {
+                balance_ -= amount;
+                other.balance_ += amount;
+            }
+        }
+    }
+
+    int get_balance() const {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        return balance_;
+    }
+};
+
+// 2. Exception safety in concurrent code
+class ExceptionSafeCounter {
+private:
+    mutable std::mutex mutex_;
+    int count_ = 0;
+
+public:
+    void risky_operation() {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+
+        ++count_; // This is safe even if the next line throws
+
+        if (count_ == 13) {
+            throw std::runtime_error("Unlucky number!");
+        }
+
+        // Lock is automatically released even if exception is thrown
+    }
+
+    int get_count() const {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        return count_;
+    }
+};
+
+// 3. Thread-local storage
+thread_local int thread_id_counter = 0;
+
+int get_thread_id() {
+    static std::atomic&lt;int&gt; global_counter{0};
+
+    if (thread_id_counter == 0) {
+        thread_id_counter = ++global_counter;
+    }
+
+    return thread_id_counter;
+}
+
+// 4. Memory ordering for performance
+class SpinLock {
+private:
+    std::atomic_flag flag_ = ATOMIC_FLAG_INIT;
+
+public:
+    void lock() {
+        while (flag_.test_and_set(std::memory_order_acquire)) {
+            std::this_thread::yield(); // Be nice to other threads
+        }
+    }
+
+    void unlock() {
+        flag_.clear(std::memory_order_release);
+    }
+
+    bool try_lock() {
+        return !flag_.test_and_set(std::memory_order_acquire);
+    }
+};</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Interview Problems</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Dining Philosophers Problem</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Classic synchronization problem demonstrating deadlock avoidance.</p>
+                    <pre class="ml-4"><code class="language-cpp">class DiningPhilosophers {
+private:
+    static const int NUM_PHILOSOPHERS = 5;
+    std::array&lt;std::mutex, NUM_PHILOSOPHERS&gt; forks_;
+
+    void pick_up_forks(int philosopher_id) {
+        int left_fork = philosopher_id;
+        int right_fork = (philosopher_id + 1) % NUM_PHILOSOPHERS;
+
+        // Prevent deadlock by ordering fork acquisition
+        if (left_fork &lt; right_fork) {
+            forks_[left_fork].lock();
+            forks_[right_fork].lock();
+        } else {
+            forks_[right_fork].lock();
+            forks_[left_fork].lock();
+        }
+    }
+
+    void put_down_forks(int philosopher_id) {
+        int left_fork = philosopher_id;
+        int right_fork = (philosopher_id + 1) % NUM_PHILOSOPHERS;
+
+        forks_[left_fork].unlock();
+        forks_[right_fork].unlock();
+    }
+
+public:
+    void philosopher_routine(int id) {
+        for (int i = 0; i &lt; 3; ++i) {
+            // Think
+            std::cout &lt;&lt; "Philosopher " &lt;&lt; id &lt;&lt; " is thinking" &lt;&lt; std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            // Pick up forks
+            pick_up_forks(id);
+
+            // Eat
+            std::cout &lt;&lt; "Philosopher " &lt;&lt; id &lt;&lt; " is eating" &lt;&lt; std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+            // Put down forks
+            put_down_forks(id);
+        }
+    }
+
+    void simulate() {
+        std::vector&lt;JoiningThread&gt; philosophers;
+
+        for (int i = 0; i &lt; NUM_PHILOSOPHERS; ++i) {
+            philosophers.emplace_back(&DiningPhilosophers::philosopher_routine, this, i);
+        }
+
+        // RAII ensures all threads are joined
+    }
+};</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Reader-Writer Problem with Priority</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Advanced synchronization with reader/writer priorities.</p>
+                    <pre class="ml-4"><code class="language-cpp">class ReadWriteLock {
+private:
+    mutable std::shared_mutex rw_mutex_;
+    mutable std::mutex reader_count_mutex_;
+    mutable std::condition_variable writer_condition_;
+    mutable int readers_count_ = 0;
+    mutable bool writer_waiting_ = false;
+
+public:
+    class ReadLock {
+    private:
+        const ReadWriteLock& rwlock_;
+    public:
+        ReadLock(const ReadWriteLock& rwlock) : rwlock_(rwlock) {
+            rwlock_.lock_read();
+        }
+        ~ReadLock() {
+            rwlock_.unlock_read();
+        }
+    };
+
+    class WriteLock {
+    private:
+        const ReadWriteLock& rwlock_;
+    public:
+        WriteLock(const ReadWriteLock& rwlock) : rwlock_(rwlock) {
+            rwlock_.lock_write();
+        }
+        ~WriteLock() {
+            rwlock_.unlock_write();
+        }
+    };
+
+    void lock_read() const {
+        std::unique_lock&lt;std::mutex&gt; lock(reader_count_mutex_);
+
+        // Wait if writer is waiting (writer priority)
+        writer_condition_.wait(lock, [this] { return !writer_waiting_; });
+
+        ++readers_count_;
+        if (readers_count_ == 1) {
+            rw_mutex_.lock_shared();
+        }
+    }
+
+    void unlock_read() const {
+        std::lock_guard&lt;std::mutex&gt; lock(reader_count_mutex_);
+        --readers_count_;
+        if (readers_count_ == 0) {
+            rw_mutex_.unlock_shared();
+            writer_condition_.notify_all();
+        }
+    }
+
+    void lock_write() const {
+        {
+            std::lock_guard&lt;std::mutex&gt; lock(reader_count_mutex_);
+            writer_waiting_ = true;
+        }
+
+        rw_mutex_.lock();
+
+        {
+            std::lock_guard&lt;std::mutex&gt; lock(reader_count_mutex_);
+            writer_waiting_ = false;
+        }
+    }
+
+    void unlock_write() const {
+        rw_mutex_.unlock();
+        writer_condition_.notify_all();
+    }
+};
+
+// Usage example
+class ThreadSafeLibrary {
+private:
+    mutable ReadWriteLock rwlock_;
+    std::map&lt;std::string, std::string&gt; books_;
+
+public:
+    std::string read_book(const std::string& title) const {
+        ReadWriteLock::ReadLock lock(rwlock_);
+        auto it = books_.find(title);
+        return it != books_.end() ? it-&gt;second : "Book not found";
+    }
+
+    void add_book(const std::string& title, const std::string& content) {
+        ReadWriteLock::WriteLock lock(rwlock_);
+        books_[title] = content;
+    }
+
+    void remove_book(const std::string& title) {
+        ReadWriteLock::WriteLock lock(rwlock_);
+        books_.erase(title);
+    }
+
+    size_t book_count() const {
+        ReadWriteLock::ReadLock lock(rwlock_);
+        return books_.size();
+    }
+};</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

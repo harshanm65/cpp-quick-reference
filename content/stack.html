@@ -1,0 +1,404 @@
+<div id="stack-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::stack In-Depth</h2>
+    <p class="mb-4 text-gray-400">A container adapter that gives the programmer the functionality of a stack - specifically, a LIFO (last-in, first-out) data structure. Header: #include &lt;stack&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Characteristics:</strong> O(1) push/pop/top operations, no iterators (access only via top), uses another container as underlying storage (default: deque).</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                    <pre><code class="language-cpp">stack();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty stack using default underlying container (deque).</p>
+                    <pre class="ml-4"><code class="language-cpp">std::stack&lt;int&gt; s1; // Empty stack</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(2) Container Constructor</h5>
+                    <pre><code class="language-cpp">explicit stack( const Container& cont );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a stack by copying the contents of an existing container.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;int&gt; deq = {1, 2, 3, 4, 5};
+std::stack&lt;int&gt; s2(deq); // Stack with {1, 2, 3, 4, 5}, top = 5</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(3) Custom Container Type</h5>
+                    <pre><code class="language-cpp">template&lt;class T, class Container = std::deque&lt;T&gt;&gt; class stack;</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">You can specify different underlying containers (vector, list, deque).</p>
+                    <pre class="ml-4"><code class="language-cpp">std::stack&lt;int, std::vector&lt;int&gt;&gt; s3; // Stack using vector as underlying container
+std::stack&lt;int, std::list&lt;int&gt;&gt; s4;   // Stack using list as underlying container</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Core Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">push(), pop(), top()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Basic stack operations for adding, removing, and accessing the top element.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::stack&lt;int&gt; stack;
+
+// Push elements
+stack.push(10);
+stack.push(20);
+stack.push(30);
+
+// Access top element
+int top_val = stack.top(); // 30
+
+// Pop element (doesn't return value!)
+stack.pop(); // Removes 30
+top_val = stack.top(); // Now 20
+
+// Check size and emptiness
+std::cout &lt;&lt; "Size: " &lt;&lt; stack.size() &lt;&lt; std::endl; // 2
+std::cout &lt;&lt; "Empty: " &lt;&lt; stack.empty() &lt;&lt; std::endl; // false</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">emplace() (C++11)</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Constructs element in-place at the top of the stack.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::stack&lt;std::string&gt; str_stack;
+
+str_stack.emplace("Hello"); // Constructs string in-place
+str_stack.push(std::string("World")); // Creates temporary, then copies
+
+// For complex objects, emplace can be more efficient
+std::stack&lt;std::pair&lt;int, std::string&gt;&gt; pair_stack;
+pair_stack.emplace(42, "Answer"); // Constructs pair in-place
+pair_stack.push({24, "Number"}); // Also works but less efficient</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Capacity Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">size(), empty()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Check the number of elements and whether the stack is empty.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::stack&lt;int&gt; stack;
+
+std::cout &lt;&lt; "Empty: " &lt;&lt; stack.empty() &lt;&lt; std::endl; // true
+std::cout &lt;&lt; "Size: " &lt;&lt; stack.size() &lt;&lt; std::endl;   // 0
+
+stack.push(1);
+stack.push(2);
+
+std::cout &lt;&lt; "Empty: " &lt;&lt; stack.empty() &lt;&lt; std::endl; // false
+std::cout &lt;&lt; "Size: " &lt;&lt; stack.size() &lt;&lt; std::endl;   // 2</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Container Adapter Design</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Underlying Container Comparison</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Different containers have different performance characteristics as stack's underlying storage.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Default: std::deque - good balance of performance
+std::stack&lt;int&gt; stack_deque; // Uses deque
+
+// std::vector - fastest for most operations, but may reallocate
+std::stack&lt;int, std::vector&lt;int&gt;&gt; stack_vector;
+
+// std::list - consistent performance, no reallocation
+std::stack&lt;int, std::list&lt;int&gt;&gt; stack_list;
+
+// Performance comparison for 1M operations:
+// Vector: Fastest push/pop, but occasional reallocation
+// Deque:  Good all-around performance, no reallocation issues
+// List:   Consistent but slower, good for memory-constrained environments</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Accessing Underlying Container</h5>
+                    <p class="text-gray-400 mt-2 mb-3">The underlying container is accessible via protected member 'c'.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Custom stack class to access underlying container
+template&lt;typename T, typename Container = std::deque&lt;T&gt;&gt;
+class accessible_stack : public std::stack&lt;T, Container&gt; {
+public:
+    const Container& get_container() const { return this-&gt;c; }
+};
+
+accessible_stack&lt;int&gt; stack;
+stack.push(1);
+stack.push(2);
+stack.push(3);
+
+const auto& container = stack.get_container();
+std::cout &lt;&lt; "Container size: " &lt;&lt; container.size() &lt;&lt; std::endl; // 3</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Common Use Cases</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Expression Evaluation</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Stacks are commonly used for parsing expressions and function calls.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Balanced parentheses checker
+bool isBalanced(const std::string& expr) {
+    std::stack&lt;char&gt; stack;
+
+    for (char ch : expr) {
+        if (ch == '(' || ch == '[' || ch == '{') {
+            stack.push(ch);
+        }
+        else if (ch == ')' || ch == ']' || ch == '}') {
+            if (stack.empty()) return false;
+
+            char top = stack.top();
+            stack.pop();
+
+            if ((ch == ')' && top != '(') ||
+                (ch == ']' && top != '[') ||
+                (ch == '}' && top != '{')) {
+                return false;
+            }
+        }
+    }
+
+    return stack.empty();
+}
+
+// Usage
+std::cout &lt;&lt; isBalanced("({[]})") &lt;&lt; std::endl;   // true
+std::cout &lt;&lt; isBalanced("({[}])") &lt;&lt; std::endl;   // false</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Depth-First Search (DFS)</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Implementing iterative DFS using a stack.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Tree node structure
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+};
+
+// Iterative DFS traversal
+std::vector&lt;int&gt; dfsTraversal(TreeNode* root) {
+    std::vector&lt;int&gt; result;
+    if (!root) return result;
+
+    std::stack&lt;TreeNode*&gt; stack;
+    stack.push(root);
+
+    while (!stack.empty()) {
+        TreeNode* node = stack.top();
+        stack.pop();
+
+        result.push_back(node-&gt;val);
+
+        // Push right first, then left (so left is processed first)
+        if (node-&gt;right) stack.push(node-&gt;right);
+        if (node-&gt;left) stack.push(node-&gt;left);
+    }
+
+    return result;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Undo/Redo Functionality</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Simple undo system using stacks.</p>
+                    <pre class="ml-4"><code class="language-cpp">class SimpleEditor {
+private:
+    std::string content;
+    std::stack&lt;std::string&gt; undo_stack;
+    std::stack&lt;std::string&gt; redo_stack;
+
+public:
+    void type(const std::string& text) {
+        undo_stack.push(content); // Save current state
+        content += text;
+
+        // Clear redo stack when new action is performed
+        while (!redo_stack.empty()) {
+            redo_stack.pop();
+        }
+    }
+
+    void undo() {
+        if (!undo_stack.empty()) {
+            redo_stack.push(content); // Save current for redo
+            content = undo_stack.top();
+            undo_stack.pop();
+        }
+    }
+
+    void redo() {
+        if (!redo_stack.empty()) {
+            undo_stack.push(content); // Save current for undo
+            content = redo_stack.top();
+            redo_stack.pop();
+        }
+    }
+
+    const std::string& getContent() const { return content; }
+};
+
+// Usage
+SimpleEditor editor;
+editor.type("Hello");
+editor.type(" World");
+std::cout &lt;&lt; editor.getContent() &lt;&lt; std::endl; // "Hello World"
+
+editor.undo();
+std::cout &lt;&lt; editor.getContent() &lt;&lt; std::endl; // "Hello"
+
+editor.redo();
+std::cout &lt;&lt; editor.getContent() &lt;&lt; std::endl; // "Hello World"</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Best Practices</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Safe Access Patterns</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Always check if stack is empty before accessing top().</p>
+                    <pre class="ml-4"><code class="language-cpp">std::stack&lt;int&gt; stack;
+
+// Bad: Undefined behavior if stack is empty
+// int val = stack.top(); // Don't do this!
+
+// Good: Check before access
+if (!stack.empty()) {
+    int val = stack.top();
+    stack.pop();
+    // Use val...
+}
+
+// Better: Exception-safe wrapper
+template&lt;typename T&gt;
+std::optional&lt;T&gt; safe_pop(std::stack&lt;T&gt;& stack) {
+    if (stack.empty()) {
+        return std::nullopt;
+    }
+
+    T val = stack.top();
+    stack.pop();
+    return val;
+}
+
+// Usage
+auto val = safe_pop(stack);
+if (val) {
+    std::cout &lt;&lt; "Popped: " &lt;&lt; *val &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Choosing the Right Container</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Select the underlying container based on your use case.</p>
+                    <pre class="ml-4"><code class="language-cpp">// For most cases: use default (deque)
+std::stack&lt;int&gt; general_stack;
+
+// For maximum performance with known size bounds: vector
+std::stack&lt;int, std::vector&lt;int&gt;&gt; fast_stack;
+
+// For memory-sensitive applications: list
+std::stack&lt;int, std::list&lt;int&gt;&gt; memory_stack;
+
+// Reserve capacity for vector-based stack if size is predictable
+std::vector&lt;int&gt; vec;
+vec.reserve(1000); // Avoid reallocations
+std::stack&lt;int, std::vector&lt;int&gt;&gt; reserved_stack(std::move(vec));</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Interview Problems</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Min Stack Implementation</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Design a stack that supports push, pop, top, and retrieving minimum element in O(1).</p>
+                    <pre class="ml-4"><code class="language-cpp">class MinStack {
+private:
+    std::stack&lt;int&gt; data_stack;
+    std::stack&lt;int&gt; min_stack;
+
+public:
+    void push(int val) {
+        data_stack.push(val);
+
+        // Push to min_stack if it's empty or val is <= current min
+        if (min_stack.empty() || val &lt;= min_stack.top()) {
+            min_stack.push(val);
+        }
+    }
+
+    void pop() {
+        if (!data_stack.empty()) {
+            // If popping the minimum element, pop from min_stack too
+            if (data_stack.top() == min_stack.top()) {
+                min_stack.pop();
+            }
+            data_stack.pop();
+        }
+    }
+
+    int top() {
+        return data_stack.top();
+    }
+
+    int getMin() {
+        return min_stack.top();
+    }
+};
+
+// Usage
+MinStack stack;
+stack.push(-2);
+stack.push(0);
+stack.push(-3);
+std::cout &lt;&lt; stack.getMin() &lt;&lt; std::endl; // -3
+stack.pop();
+std::cout &lt;&lt; stack.top() &lt;&lt; std::endl;    // 0
+std::cout &lt;&lt; stack.getMin() &lt;&lt; std::endl; // -2</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Valid Parentheses with Multiple Types</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Check if a string of brackets is valid.</p>
+                    <pre class="ml-4"><code class="language-cpp">bool isValid(const std::string& s) {
+    std::stack&lt;char&gt; stack;
+    std::unordered_map&lt;char, char&gt; pairs = {
+        {')', '('}, {']', '['}, {'}', '{'}
+    };
+
+    for (char c : s) {
+        // If it's an opening bracket
+        if (pairs.find(c) == pairs.end()) {
+            stack.push(c);
+        }
+        // If it's a closing bracket
+        else {
+            if (stack.empty() || stack.top() != pairs[c]) {
+                return false;
+            }
+            stack.pop();
+        }
+    }
+
+    return stack.empty();
+}
+
+// Test cases
+std::cout &lt;&lt; isValid("()[]{}") &lt;&lt; std::endl;     // true
+std::cout &lt;&lt; isValid("([)]") &lt;&lt; std::endl;       // false
+std::cout &lt;&lt; isValid("{[()]}") &lt;&lt; std::endl;     // true</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

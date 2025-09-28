@@ -1,0 +1,507 @@
+<div id="set-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::set In-Depth</h2>
+    <p class="mb-4 text-gray-400">An associative container that stores unique elements in a sorted order. Implemented as a balanced binary search tree (typically red-black tree), providing logarithmic time complexity for most operations. Header: #include &lt;set&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Characteristics:</strong> O(log n) insertion, deletion, and search. Elements are automatically sorted and duplicates are not allowed. Iterator traversal yields elements in sorted order.</p>
+
+    <div class="toc-container bg-gray-700 rounded-lg p-4 mb-6">
+        <h4 class="text-lg font-semibold text-cyan-300 mb-3">📋 Table of Contents</h4>
+        <ul class="space-y-2 text-sm">
+            <li><a href="#constructors" class="text-cyan-400 hover:text-cyan-200 transition-colors">Constructors</a></li>
+            <li><a href="#basic-operations" class="text-cyan-400 hover:text-cyan-200 transition-colors">Basic Operations</a></li>
+            <li><a href="#iterators-sorted-order" class="text-cyan-400 hover:text-cyan-200 transition-colors">Iterators and Sorted Order</a></li>
+            <li><a href="#custom-comparators" class="text-cyan-400 hover:text-cyan-200 transition-colors">Custom Comparators</a></li>
+            <li><a href="#set-operations" class="text-cyan-400 hover:text-cyan-200 transition-colors">Set Operations</a></li>
+            <li><a href="#when-to-use" class="text-cyan-400 hover:text-cyan-200 transition-colors">When to Use</a></li>
+            <li><a href="#common-patterns" class="text-cyan-400 hover:text-cyan-200 transition-colors">Common Patterns</a></li>
+        </ul>
+    </div>
+
+    <div class="space-y-12">
+        <div>
+            <h3 id="constructors" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                    <pre><code class="language-cpp">set();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty set with the default comparator (std::less).</p>
+                    <pre class="ml-4"><code class="language-cpp">std::set&lt;int&gt; s1; // Empty set</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(2) Range Constructor</h5>
+                    <pre><code class="language-cpp">template&lt; class InputIt &gt;
+set( InputIt first, InputIt last );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a set from a range of elements. Duplicates are automatically removed.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec = {3, 1, 4, 1, 5, 9, 2, 6, 5};
+std::set&lt;int&gt; s2(vec.begin(), vec.end()); // {1, 2, 3, 4, 5, 6, 9}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(3) Copy Constructor</h5>
+                    <pre><code class="language-cpp">set( const set&amp; other );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a copy of another set.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::set&lt;int&gt; original = {1, 2, 3};
+std::set&lt;int&gt; copy(original); // {1, 2, 3}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(4) Initializer List Constructor</h5>
+                    <pre><code class="language-cpp">set( std::initializer_list&lt;T&gt; init );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a set from an initializer list. (Since C++11)</p>
+                    <pre class="ml-4"><code class="language-cpp">std::set&lt;int&gt; s3 = {5, 2, 8, 2, 1, 9}; // {1, 2, 5, 8, 9}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(5) Custom Comparator Constructor</h5>
+                    <pre><code class="language-cpp">template&lt; class Compare &gt;
+set( const Compare&amp; comp );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a set with a custom comparison function.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Descending order set
+std::set&lt;int, std::greater&lt;int&gt;&gt; s4 = {5, 2, 8, 1, 9}; // {9, 8, 5, 2, 1}
+
+// Custom comparator for strings by length
+auto comp = [](const std::string&amp; a, const std::string&amp; b) {
+    return a.length() &lt; b.length();
+};
+std::set&lt;std::string, decltype(comp)&gt; s5(comp);
+s5.insert({"hello", "hi", "world", "a"}); // {"a", "hi", "hello", "world"}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="basic-operations" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Basic Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">insert()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Inserts elements into the set. Returns a pair with iterator and bool indicating success.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::set&lt;int&gt; s = {1, 3, 5};
+
+// Insert single element
+auto [it1, success1] = s.insert(2);  // Returns {iterator to 2, true}
+auto [it2, success2] = s.insert(3);  // Returns {iterator to 3, false} - already exists
+
+// Insert with hint (can be more efficient)
+auto it3 = s.insert(s.end(), 6);     // Hint that 6 should go at the end
+
+// Insert range
+std::vector&lt;int&gt; vec = {7, 8, 9, 3}; // 3 is duplicate
+s.insert(vec.begin(), vec.end());
+
+// s is now {1, 2, 3, 5, 6, 7, 8, 9}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">erase()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Removes elements from the set. Returns number of elements removed.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::set&lt;int&gt; s = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+// Erase by value
+size_t count1 = s.erase(5);        // Returns 1 (element removed)
+size_t count2 = s.erase(10);       // Returns 0 (element not found)
+
+// Erase by iterator
+auto it = s.find(3);
+if (it != s.end()) {
+    s.erase(it);                   // Erase element 3
+}
+
+// Erase range
+auto first = s.find(6);
+auto last = s.find(9);
+s.erase(first, last);              // Erases 6, 7, 8 (not including 9)
+
+// s is now {1, 2, 4, 9}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">find(), count(), contains()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Search for elements in the set.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::set&lt;int&gt; s = {1, 3, 5, 7, 9};
+
+// Find element
+auto it = s.find(5);
+if (it != s.end()) {
+    std::cout &lt;&lt; "Found: " &lt;&lt; *it &lt;&lt; std::endl; // Found: 5
+}
+
+// Count occurrences (always 0 or 1 for set)
+size_t count = s.count(3);         // Returns 1
+size_t count2 = s.count(4);        // Returns 0
+
+// Check if element exists (C++20)
+if (s.contains(7)) {               // More readable than find() != end()
+    std::cout &lt;&lt; "7 is in the set" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">clear(), empty(), size()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Container state and size operations.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::set&lt;int&gt; s = {1, 2, 3, 4, 5};
+
+std::cout &lt;&lt; "Size: " &lt;&lt; s.size() &lt;&lt; std::endl;     // 5
+std::cout &lt;&lt; "Empty: " &lt;&lt; s.empty() &lt;&lt; std::endl;   // false
+
+s.clear();
+std::cout &lt;&lt; "After clear - Size: " &lt;&lt; s.size() &lt;&lt; std::endl; // 0
+std::cout &lt;&lt; "Empty: " &lt;&lt; s.empty() &lt;&lt; std::endl;             // true</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="iterators-sorted-order" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Iterators and Sorted Order</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Iterator Traversal</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Iterators traverse elements in sorted order. std::set provides bidirectional iterators.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::set&lt;int&gt; s = {5, 2, 8, 1, 9, 3};
+
+// Forward iteration (sorted order)
+std::cout &lt;&lt; "Forward: ";
+for (auto it = s.begin(); it != s.end(); ++it) {
+    std::cout &lt;&lt; *it &lt;&lt; " "; // 1 2 3 5 8 9
+}
+
+// Range-based for loop
+std::cout &lt;&lt; "Range-based: ";
+for (const auto&amp; element : s) {
+    std::cout &lt;&lt; element &lt;&lt; " "; // 1 2 3 5 8 9
+}
+
+// Reverse iteration
+std::cout &lt;&lt; "Reverse: ";
+for (auto it = s.rbegin(); it != s.rend(); ++it) {
+    std::cout &lt;&lt; *it &lt;&lt; " "; // 9 8 5 3 2 1
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">lower_bound(), upper_bound(), equal_range()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Binary search operations for finding positions and ranges.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::set&lt;int&gt; s = {1, 3, 5, 7, 9, 11, 13};
+
+// lower_bound: first element >= value
+auto lb = s.lower_bound(6);        // Points to 7
+auto lb2 = s.lower_bound(7);       // Points to 7
+
+// upper_bound: first element > value
+auto ub = s.upper_bound(7);        // Points to 9
+
+// equal_range: pair of lower_bound and upper_bound
+auto [lower, upper] = s.equal_range(7); // lower points to 7, upper points to 9
+
+// Find elements in range [5, 10)
+auto start = s.lower_bound(5);     // Points to 5
+auto end = s.lower_bound(10);      // Points to 11
+for (auto it = start; it != end; ++it) {
+    std::cout &lt;&lt; *it &lt;&lt; " ";        // 5 7 9
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="custom-comparators" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Custom Comparators</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Function Objects and Lambdas</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Custom comparison functions allow flexible sorting criteria.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Custom struct with comparison operator
+struct Person {
+    std::string name;
+    int age;
+
+    // Define comparison for set ordering
+    bool operator&lt;(const Person&amp; other) const {
+        return age &lt; other.age; // Sort by age
+    }
+};
+
+std::set&lt;Person&gt; people = {
+    {"Alice", 30}, {"Bob", 25}, {"Charlie", 35}
+}; // Sorted by age: Bob(25), Alice(30), Charlie(35)
+
+// Lambda comparator for descending order
+auto desc_comp = [](int a, int b) { return a &gt; b; };
+std::set&lt;int, decltype(desc_comp)&gt; desc_set(desc_comp);
+desc_set.insert({1, 5, 3, 9, 2}); // {9, 5, 3, 2, 1}
+
+// Comparator for case-insensitive string sorting
+auto case_insensitive = [](const std::string&amp; a, const std::string&amp; b) {
+    return std::lexicographical_compare(
+        a.begin(), a.end(), b.begin(), b.end(),
+        [](char c1, char c2) { return std::tolower(c1) &lt; std::tolower(c2); }
+    );
+};
+std::set&lt;std::string, decltype(case_insensitive)&gt; words(case_insensitive);
+words.insert({"apple", "Banana", "cherry", "Date"}); // Sorted case-insensitively</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Transparent Comparators (C++14)</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Allow heterogeneous lookup without creating temporary objects.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Using std::less&lt;&gt; for transparent comparison
+std::set&lt;std::string, std::less&lt;&gt;&gt; string_set = {"hello", "world", "test"};
+
+// Can search with string_view without creating std::string
+std::string_view sv = "hello";
+auto it = string_set.find(sv);    // No temporary std::string created
+
+// Can also use C-style strings
+auto it2 = string_set.find("world"); // No temporary std::string created</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="set-operations" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Set Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Union, Intersection, Difference</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Mathematical set operations using STL algorithms.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;algorithm&gt;
+
+std::set&lt;int&gt; set1 = {1, 2, 3, 4, 5};
+std::set&lt;int&gt; set2 = {4, 5, 6, 7, 8};
+std::set&lt;int&gt; result;
+
+// Union: all elements from both sets
+std::set_union(set1.begin(), set1.end(),
+               set2.begin(), set2.end(),
+               std::inserter(result, result.begin()));
+// result: {1, 2, 3, 4, 5, 6, 7, 8}
+
+result.clear();
+
+// Intersection: common elements
+std::set_intersection(set1.begin(), set1.end(),
+                      set2.begin(), set2.end(),
+                      std::inserter(result, result.begin()));
+// result: {4, 5}
+
+result.clear();
+
+// Difference: elements in set1 but not in set2
+std::set_difference(set1.begin(), set1.end(),
+                    set2.begin(), set2.end(),
+                    std::inserter(result, result.begin()));
+// result: {1, 2, 3}
+
+result.clear();
+
+// Symmetric difference: elements in either set but not both
+std::set_symmetric_difference(set1.begin(), set1.end(),
+                              set2.begin(), set2.end(),
+                              std::inserter(result, result.begin()));
+// result: {1, 2, 3, 6, 7, 8}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Set Relationship Tests</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Check relationships between sets.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::set&lt;int&gt; set1 = {1, 2, 3};
+std::set&lt;int&gt; set2 = {1, 2, 3, 4, 5};
+std::set&lt;int&gt; set3 = {4, 5, 6};
+
+// Check if set1 is a subset of set2
+bool is_subset = std::includes(set2.begin(), set2.end(),
+                               set1.begin(), set1.end());
+// is_subset: true
+
+// Check if sets are disjoint (no common elements)
+std::set&lt;int&gt; intersection;
+std::set_intersection(set1.begin(), set1.end(),
+                      set3.begin(), set3.end(),
+                      std::inserter(intersection, intersection.begin()));
+bool are_disjoint = intersection.empty();
+// are_disjoint: true</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 id="when-to-use" class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">When to Use set vs Other Containers</h3>
+    <div class="space-y-6 mb-8">
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <h4 class="text-lg font-semibold text-green-300 mb-2">Use std::set when:</h4>
+            <ul class="list-disc list-inside text-gray-400 space-y-1">
+                <li>You need unique elements automatically maintained</li>
+                <li>You need elements in sorted order</li>
+                <li>You frequently search for elements (O(log n))</li>
+                <li>You need mathematical set operations</li>
+                <li>You need range queries (lower_bound, upper_bound)</li>
+            </ul>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <h4 class="text-lg font-semibold text-yellow-300 mb-2">Use std::unordered_set when:</h4>
+            <ul class="list-disc list-inside text-gray-400 space-y-1">
+                <li>You need faster average insertion/deletion/search (O(1))</li>
+                <li>You don't need sorted order</li>
+                <li>You have a good hash function for your type</li>
+                <li>Memory usage is less critical</li>
+            </ul>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <h4 class="text-lg font-semibold text-blue-300 mb-2">Use std::vector when:</h4>
+            <ul class="list-disc list-inside text-gray-400 space-y-1">
+                <li>You need fast random access by index</li>
+                <li>You allow duplicate elements</li>
+                <li>You need cache-friendly memory layout</li>
+                <li>You frequently iterate through all elements</li>
+                <li>You can manually maintain sorted order when needed</li>
+            </ul>
+        </div>
+    </div>
+
+    <h3 id="common-patterns" class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">Common std::set Patterns</h3>
+    <div class="space-y-4">
+        <details>
+            <summary class="font-semibold text-lg">1. Unique Element Collection</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Automatically removing duplicates from a collection of elements.</p>
+                <pre><code class="language-cpp">std::vector&lt;int&gt; input = {1, 3, 2, 1, 4, 2, 5, 3, 6};
+
+// Convert to set to remove duplicates
+std::set&lt;int&gt; unique_elements(input.begin(), input.end());
+
+// Convert back to vector if needed
+std::vector&lt;int&gt; result(unique_elements.begin(), unique_elements.end());
+// result: {1, 2, 3, 4, 5, 6} - sorted and unique</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">2. Range Queries</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Finding elements within a specific range efficiently.</p>
+                <pre><code class="language-cpp">std::set&lt;int&gt; scores = {85, 92, 78, 96, 88, 73, 91, 82};
+
+// Find all scores between 80 and 90 (inclusive)
+auto lower = scores.lower_bound(80);  // First score >= 80
+auto upper = scores.upper_bound(90);  // First score > 90
+
+std::cout &lt;&lt; "Scores between 80-90: ";
+for (auto it = lower; it != upper; ++it) {
+    std::cout &lt;&lt; *it &lt;&lt; " "; // 82 85 88
+}
+
+// Count scores in range
+int count = std::distance(lower, upper); // 3</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">3. Ordered Processing</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Processing elements in a specific order automatically.</p>
+                <pre><code class="language-cpp">// Priority-based task processing
+struct Task {
+    std::string name;
+    int priority;
+
+    bool operator&lt;(const Task&amp; other) const {
+        return priority &gt; other.priority; // Higher priority first
+    }
+};
+
+std::set&lt;Task&gt; task_queue;
+task_queue.insert({"Low priority task", 1});
+task_queue.insert({"High priority task", 10});
+task_queue.insert({"Medium priority task", 5});
+
+// Process tasks in priority order
+for (const auto&amp; task : task_queue) {
+    std::cout &lt;&lt; "Processing: " &lt;&lt; task.name
+              &lt;&lt; " (Priority: " &lt;&lt; task.priority &lt;&lt; ")" &lt;&lt; std::endl;
+}
+// Output: High priority (10), Medium priority (5), Low priority (1)</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">4. Efficient Set Membership Testing</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Fast lookups for checking if elements exist in a collection.</p>
+                <pre><code class="language-cpp">// Whitelist/blacklist checking
+std::set&lt;std::string&gt; allowed_users = {
+    "alice", "bob", "charlie", "diana"
+};
+
+bool is_user_allowed(const std::string&amp; username) {
+    return allowed_users.count(username) &gt; 0;
+    // Or with C++20: return allowed_users.contains(username);
+}
+
+// Usage in authentication
+std::string user = "bob";
+if (is_user_allowed(user)) {
+    std::cout &lt;&lt; "Access granted" &lt;&lt; std::endl;
+} else {
+    std::cout &lt;&lt; "Access denied" &lt;&lt; std::endl;
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">5. Sliding Window Unique Elements</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Maintaining unique elements in a sliding window efficiently.</p>
+                <pre><code class="language-cpp">// Count unique elements in sliding window of size k
+std::vector&lt;int&gt; count_unique_in_windows(const std::vector&lt;int&gt;&gt; arr, int k) {
+    std::vector&lt;int&gt; result;
+    std::multiset&lt;int&gt; window; // multiset to handle duplicates within window
+
+    for (int i = 0; i &lt; arr.size(); ++i) {
+        // Add current element
+        window.insert(arr[i]);
+
+        // Remove element that's outside window
+        if (i &gt;= k) {
+            window.erase(window.find(arr[i - k]));
+        }
+
+        // Count unique elements when window is full
+        if (i &gt;= k - 1) {
+            std::set&lt;int&gt; unique_elements(window.begin(), window.end());
+            result.push_back(unique_elements.size());
+        }
+    }
+
+    return result;
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">6. Custom Sorting and Grouping</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Using custom comparators for complex sorting requirements.</p>
+                <pre><code class="language-cpp">// Sort points by distance from origin
+struct Point {
+    double x, y;
+
+    double distance_from_origin() const {
+        return std::sqrt(x * x + y * y);
+    }
+};
+
+auto distance_comparator = [](const Point&amp; a, const Point&amp; b) {
+    return a.distance_from_origin() &lt; b.distance_from_origin();
+};
+
+std::set&lt;Point, decltype(distance_comparator)&gt; points_by_distance(distance_comparator);
+points_by_distance.insert({{3, 4}, {1, 1}, {0, 5}, {2, 2}});
+
+// Points are automatically sorted by distance from origin
+for (const auto&amp; point : points_by_distance) {
+    std::cout &lt;&lt; "(" &lt;&lt; point.x &lt;&lt; ", " &lt;&lt; point.y &lt;&lt; ") "
+              &lt;&lt; "distance: " &lt;&lt; point.distance_from_origin() &lt;&lt; std::endl;
+}</code></pre>
+            </div>
+        </details>
+    </div>
+</div>

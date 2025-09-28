@@ -1,0 +1,392 @@
+<div id="list-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::list In-Depth</h2>
+    <p class="mb-4 text-gray-400">A doubly-linked list container that allows efficient insertion and deletion at any position. Unlike vectors, elements are not stored in contiguous memory. Header: #include &lt;list&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Characteristics:</strong> O(1) insertion/deletion anywhere (with iterator), O(n) element access, no random access, bidirectional iterators only.</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                    <pre><code class="language-cpp">list();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty list.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst1; // Empty list</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(2) Fill Constructor</h5>
+                    <pre><code class="language-cpp">list( size_type count, const T&amp; value );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a list with `count` copies of `value`.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst2(5, 42); // {42, 42, 42, 42, 42}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(3) Range Constructor</h5>
+                    <pre><code class="language-cpp">template&lt; class InputIt &gt;
+list( InputIt first, InputIt last );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a list from a range of elements.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; source = {1, 2, 3, 4, 5};
+std::list&lt;int&gt; lst3(source.begin() + 1, source.begin() + 4); // {2, 3, 4}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(4) Initializer List Constructor</h5>
+                    <pre><code class="language-cpp">list( std::initializer_list&lt;T&gt; init );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a list from an initializer list. (Since C++11)</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst4 = {1, 2, 3, 4, 5}; // {1, 2, 3, 4, 5}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Element Access</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">front(), back()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Access the first and last elements. No random access available for std::list.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst = {10, 20, 30, 40, 50};
+
+int first = lst.front(); // 10
+int last = lst.back();   // 50
+
+// Modifying through references
+lst.front() = 100; // lst is now {100, 20, 30, 40, 50}
+lst.back() = 500;  // lst is now {100, 20, 30, 40, 500}
+
+// Note: No operator[] or at() - use iterators for middle elements
+auto it = lst.begin();
+std::advance(it, 2); // Move to 3rd element
+int third = *it; // 30</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Modifiers</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">push_front(), push_back(), emplace_front(), emplace_back()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Insert elements at both ends efficiently - a key advantage over std::vector.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;std::string&gt; lst;
+
+lst.push_back("World");           // {"World"}
+lst.push_front("Hello");          // {"Hello", "World"}
+
+// More efficient for complex objects
+lst.emplace_back("!");            // {"Hello", "World", "!"}
+lst.emplace_front(5, 'A');        // {"AAAAA", "Hello", "World", "!"}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">pop_front(), pop_back()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Remove elements from both ends efficiently.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst = {1, 2, 3, 4, 5};
+
+int first = lst.front(); // Get first element
+lst.pop_front();         // Remove it - lst is now {2, 3, 4, 5}
+
+int last = lst.back();   // Get last element
+lst.pop_back();          // Remove it - lst is now {2, 3, 4}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">insert(), emplace()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Insert elements at any position with O(1) complexity (given iterator).</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst = {1, 3, 5};
+
+// Insert single element
+auto it = lst.begin();
+std::advance(it, 1);
+lst.insert(it, 2); // {1, 2, 3, 5}
+
+// Insert multiple copies
+lst.insert(lst.end(), 3, 6); // {1, 2, 3, 5, 6, 6, 6}
+
+// Insert range
+std::list&lt;int&gt; extra = {7, 8, 9};
+lst.insert(lst.end(), extra.begin(), extra.end()); // {1, 2, 3, 5, 6, 6, 6, 7, 8, 9}
+
+// Emplace (construct in-place)
+lst.emplace(lst.begin(), 0); // {0, 1, 2, 3, 5, 6, 6, 6, 7, 8, 9}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">erase()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Remove elements with O(1) complexity (given iterator).</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+// Erase single element
+auto it = lst.begin();
+std::advance(it, 2);
+lst.erase(it); // Removes element at position 2 (value 3)
+// lst is now {1, 2, 4, 5, 6, 7, 8, 9}
+
+// Erase range
+auto first = lst.begin();
+std::advance(first, 2);
+auto last = first;
+std::advance(last, 3);
+lst.erase(first, last); // Removes 3 elements starting from position 2
+// lst is now {1, 2, 7, 8, 9}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">List-Specific Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">splice()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Transfer elements from another list in O(1) time - unique to list containers.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst1 = {1, 2, 3};
+std::list&lt;int&gt; lst2 = {4, 5, 6, 7, 8};
+
+// Splice entire list
+auto it = lst1.begin();
+std::advance(it, 2);
+lst1.splice(it, lst2); // lst1: {1, 2, 4, 5, 6, 7, 8, 3}, lst2: {}
+
+// Splice single element
+std::list&lt;int&gt; lst3 = {10, 20, 30};
+std::list&lt;int&gt; lst4 = {40, 50, 60};
+auto source_it = lst4.begin();
+std::advance(source_it, 1);
+lst3.splice(lst3.end(), lst4, source_it); // lst3: {10, 20, 30, 50}, lst4: {40, 60}
+
+// Splice range
+std::list&lt;int&gt; lst5 = {100, 200};
+std::list&lt;int&gt; lst6 = {300, 400, 500, 600};
+auto range_start = lst6.begin();
+auto range_end = range_start;
+std::advance(range_end, 2);
+lst5.splice(lst5.begin(), lst6, range_start, range_end);
+// lst5: {300, 400, 100, 200}, lst6: {500, 600}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">sort()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Sorts the list using merge sort (stable, O(n log n)). Cannot use std::sort since list has no random access.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst = {5, 2, 8, 1, 9, 3};
+
+// Default sort (ascending)
+lst.sort(); // {1, 2, 3, 5, 8, 9}
+
+// Custom comparator
+lst.sort(std::greater&lt;int&gt;()); // {9, 8, 5, 3, 2, 1}
+
+// Lambda comparator
+std::list&lt;std::string&gt; words = {"apple", "pie", "a", "longer"};
+words.sort([](const std::string&amp; a, const std::string&amp; b) {
+    return a.length() &lt; b.length();
+}); // {"a", "pie", "apple", "longer"}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">merge()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Merges two sorted lists into one sorted list in O(n + m) time.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst1 = {1, 3, 5, 7};
+std::list&lt;int&gt; lst2 = {2, 4, 6, 8, 10};
+
+// Both lists must be sorted before merging
+lst1.merge(lst2); // lst1: {1, 2, 3, 4, 5, 6, 7, 8, 10}, lst2: {}
+
+// Custom comparator
+std::list&lt;int&gt; lst3 = {9, 7, 5, 3, 1}; // descending order
+std::list&lt;int&gt; lst4 = {8, 6, 4, 2};    // descending order
+lst3.merge(lst4, std::greater&lt;int&gt;()); // lst3: {9, 8, 7, 6, 5, 4, 3, 2, 1}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">unique()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Removes consecutive duplicate elements.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst = {1, 1, 2, 2, 2, 3, 3, 4, 5, 5};
+
+// Remove consecutive duplicates
+lst.unique(); // {1, 2, 3, 4, 5}
+
+// Custom equality predicate
+std::list&lt;int&gt; lst2 = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+lst2.unique([](int a, int b) { return abs(a - b) &lt; 2; });
+// Removes elements that differ by less than 2</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">remove(), remove_if()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Remove all elements equal to a value or satisfying a predicate.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst = {1, 2, 3, 2, 4, 2, 5};
+
+// Remove all elements equal to 2
+lst.remove(2); // {1, 3, 4, 5}
+
+// Remove elements satisfying predicate
+std::list&lt;int&gt; lst2 = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+lst2.remove_if([](int x) { return x % 2 == 0; }); // {1, 3, 5, 7, 9}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">reverse()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Reverses the order of elements in O(n) time.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst = {1, 2, 3, 4, 5};
+lst.reverse(); // {5, 4, 3, 2, 1}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Iterator Invalidation Rules</h3>
+            <div class="space-y-4">
+                <p class="text-gray-400">Understanding when iterators become invalid is crucial for safe list usage:</p>
+                <ul class="text-gray-400 ml-6 space-y-2">
+                    <li><strong>Insert operations:</strong> Never invalidate any iterators or references.</li>
+                    <li><strong>Erase operations:</strong> Only invalidate iterators and references to the erased elements.</li>
+                    <li><strong>splice operations:</strong> Iterators to spliced elements remain valid and point to the new location.</li>
+                    <li><strong>sort, merge, remove, unique, reverse:</strong> May invalidate iterators but not references.</li>
+                </ul>
+                <pre class="ml-4"><code class="language-cpp">std::list&lt;int&gt; lst = {1, 2, 3, 4, 5};
+auto it1 = lst.begin();  // Points to 1
+auto it2 = ++lst.begin(); // Points to 2
+auto it3 = lst.end();    // End iterator
+
+lst.insert(it2, 10);     // it1, it2, it3 all remain valid
+lst.erase(it2);          // Only it2 becomes invalid
+// it1 still points to 1, it3 still valid end iterator</code></pre>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">When to Use std::list vs Other Containers</h3>
+            <div class="space-y-4">
+                <div class="bg-gray-800 p-4 rounded">
+                    <h5 class="font-semibold text-green-300 mb-2">Use std::list when:</h5>
+                    <ul class="text-gray-400 ml-4 space-y-1">
+                        <li>• Frequent insertions/deletions in the middle</li>
+                        <li>• Need O(1) insertion/deletion at both ends</li>
+                        <li>• Splicing operations are important</li>
+                        <li>• Iterator stability is crucial</li>
+                        <li>• No need for random access</li>
+                    </ul>
+                </div>
+                <div class="bg-gray-800 p-4 rounded">
+                    <h5 class="font-semibold text-red-300 mb-2">Avoid std::list when:</h5>
+                    <ul class="text-gray-400 ml-4 space-y-1">
+                        <li>• Random access is needed (use std::vector)</li>
+                        <li>• Memory locality is important (use std::vector)</li>
+                        <li>• Cache performance is critical (use std::vector)</li>
+                        <li>• Small, simple data types (overhead may be significant)</li>
+                    </ul>
+                </div>
+                <div class="bg-gray-800 p-4 rounded">
+                    <h5 class="font-semibold text-yellow-300 mb-2">Performance Comparison:</h5>
+                    <pre class="text-sm"><code class="language-cpp">// Operation          | vector | deque | list  |
+// Random Access      | O(1)   | O(1)  | O(n)  |
+// Insert at end      | O(1)*  | O(1)  | O(1)  |
+// Insert at front    | O(n)   | O(1)  | O(1)  |
+// Insert in middle   | O(n)   | O(n)  | O(1)  |
+// Memory overhead    | Low    | Med   | High  |
+// Cache performance  | Best   | Good  | Poor  |
+
+// * Amortized for vector</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">Common std::list Patterns</h3>
+    <div class="space-y-4">
+        <details>
+            <summary class="font-semibold text-lg">1. Efficient List Merging</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Combining multiple sorted lists efficiently using splice and merge.</p>
+                <pre><code class="language-cpp">std::list&lt;int&gt; merge_sorted_lists(std::vector&lt;std::list&lt;int&gt;&gt;&amp; lists) {
+    if (lists.empty()) return {};
+
+    std::list&lt;int&gt; result = std::move(lists[0]);
+
+    for (size_t i = 1; i < lists.size(); ++i) {
+        result.merge(lists[i]); // O(n + m) for each merge
+    }
+
+    return result;
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">2. LRU Cache Implementation</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Using list's O(1) splice operation for efficient LRU cache.</p>
+                <pre><code class="language-cpp">template&lt;typename Key, typename Value&gt;
+class LRUCache {
+private:
+    size_t capacity_;
+    std::list&lt;std::pair&lt;Key, Value&gt;&gt; items_;
+    std::unordered_map&lt;Key, typename std::list&lt;std::pair&lt;Key, Value&gt;&gt;::iterator&gt; index_;
+
+public:
+    LRUCache(size_t capacity) : capacity_(capacity) {}
+
+    void put(const Key&amp; key, const Value&amp; value) {
+        auto it = index_.find(key);
+        if (it != index_.end()) {
+            // Update existing item - move to front
+            items_.splice(items_.begin(), items_, it->second);
+            it->second->second = value;
+        } else {
+            // New item
+            if (items_.size() >= capacity_) {
+                // Remove LRU item
+                index_.erase(items_.back().first);
+                items_.pop_back();
+            }
+            items_.emplace_front(key, value);
+            index_[key] = items_.begin();
+        }
+    }
+
+    std::optional&lt;Value&gt; get(const Key&amp; key) {
+        auto it = index_.find(key);
+        if (it == index_.end()) {
+            return std::nullopt;
+        }
+
+        // Move to front (most recently used)
+        items_.splice(items_.begin(), items_, it->second);
+        return it->second->second;
+    }
+};</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">3. Safe Iterator-Based Processing</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Processing and modifying list elements safely during iteration.</p>
+                <pre><code class="language-cpp">void process_and_filter_list(std::list&lt;int&gt;&amp; lst) {
+    auto it = lst.begin();
+    while (it != lst.end()) {
+        if (*it % 2 == 0) {
+            *it *= 2; // Process even numbers
+            ++it;
+        } else {
+            it = lst.erase(it); // Remove odd numbers, erase returns next valid iterator
+        }
+    }
+}
+
+// Alternative using remove_if (more efficient)
+void process_and_filter_list_v2(std::list&lt;int&gt;&amp; lst) {
+    // First process all even numbers
+    for (auto&amp; elem : lst) {
+        if (elem % 2 == 0) {
+            elem *= 2;
+        }
+    }
+
+    // Then remove odd numbers
+    lst.remove_if([](int x) { return x % 2 != 0; });
+}</code></pre>
+            </div>
+        </details>
+    </div>
+</div>

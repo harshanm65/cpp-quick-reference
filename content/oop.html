@@ -1,0 +1,1486 @@
+<div id="oop-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">Object-Oriented Programming In-Depth</h2>
+    <p class="mb-4 text-gray-400">C++ supports object-oriented programming through classes, inheritance, polymorphism, and encapsulation. These features enable building complex, maintainable, and reusable software systems. C++ also supports advanced OOP concepts like virtual functions, abstract classes, and multiple inheritance.</p>
+    <p class="mb-6 text-gray-400"><strong>Key Principles:</strong> Encapsulation (data hiding), Inheritance (code reuse), Polymorphism (dynamic behavior), and Abstraction (interface definition).</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Classes and Objects</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Basic Class Definition</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Fundamental class structure with constructors, destructors, and member functions.</p>
+                    <pre class="ml-4"><code class="language-cpp">class BankAccount {
+private:
+    std::string account_number_;
+    double balance_;
+    std::string owner_name_;
+
+public:
+    // Default constructor
+    BankAccount() : account_number_(""), balance_(0.0), owner_name_("") {
+        std::cout &lt;&lt; "Default constructor called" &lt;&lt; std::endl;
+    }
+
+    // Parameterized constructor
+    BankAccount(const std::string& account_number,
+                const std::string& owner_name,
+                double initial_balance = 0.0)
+        : account_number_(account_number),
+          balance_(initial_balance),
+          owner_name_(owner_name) {
+        std::cout &lt;&lt; "Parameterized constructor called for " &lt;&lt; owner_name_ &lt;&lt; std::endl;
+    }
+
+    // Copy constructor
+    BankAccount(const BankAccount& other)
+        : account_number_(other.account_number_),
+          balance_(other.balance_),
+          owner_name_(other.owner_name_) {
+        std::cout &lt;&lt; "Copy constructor called for " &lt;&lt; owner_name_ &lt;&lt; std::endl;
+    }
+
+    // Copy assignment operator
+    BankAccount& operator=(const BankAccount& other) {
+        if (this != &other) {
+            account_number_ = other.account_number_;
+            balance_ = other.balance_;
+            owner_name_ = other.owner_name_;
+            std::cout &lt;&lt; "Copy assignment called for " &lt;&lt; owner_name_ &lt;&lt; std::endl;
+        }
+        return *this;
+    }
+
+    // Move constructor (C++11)
+    BankAccount(BankAccount&& other) noexcept
+        : account_number_(std::move(other.account_number_)),
+          balance_(other.balance_),
+          owner_name_(std::move(other.owner_name_)) {
+        other.balance_ = 0.0;
+        std::cout &lt;&lt; "Move constructor called for " &lt;&lt; owner_name_ &lt;&lt; std::endl;
+    }
+
+    // Move assignment operator (C++11)
+    BankAccount& operator=(BankAccount&& other) noexcept {
+        if (this != &other) {
+            account_number_ = std::move(other.account_number_);
+            balance_ = other.balance_;
+            owner_name_ = std::move(other.owner_name_);
+            other.balance_ = 0.0;
+            std::cout &lt;&lt; "Move assignment called for " &lt;&lt; owner_name_ &lt;&lt; std::endl;
+        }
+        return *this;
+    }
+
+    // Destructor
+    ~BankAccount() {
+        std::cout &lt;&lt; "Destructor called for " &lt;&lt; owner_name_ &lt;&lt; std::endl;
+    }
+
+    // Member functions
+    void deposit(double amount) {
+        if (amount > 0) {
+            balance_ += amount;
+            std::cout &lt;&lt; "Deposited $" &lt;&lt; amount &lt;&lt; ". New balance: $" &lt;&lt; balance_ &lt;&lt; std::endl;
+        }
+    }
+
+    bool withdraw(double amount) {
+        if (amount > 0 && amount &lt;= balance_) {
+            balance_ -= amount;
+            std::cout &lt;&lt; "Withdrew $" &lt;&lt; amount &lt;&lt; ". New balance: $" &lt;&lt; balance_ &lt;&lt; std::endl;
+            return true;
+        }
+        return false;
+    }
+
+    // Const member function
+    double get_balance() const {
+        return balance_;
+    }
+
+    const std::string& get_owner() const {
+        return owner_name_;
+    }
+
+    const std::string& get_account_number() const {
+        return account_number_;
+    }
+};
+
+// Usage example
+void basic_class_usage() {
+    BankAccount account1("12345", "John Doe", 1000.0);
+    account1.deposit(500.0);
+    account1.withdraw(200.0);
+
+    BankAccount account2 = account1; // Copy constructor
+    BankAccount account3;
+    account3 = account1; // Copy assignment
+
+    std::cout &lt;&lt; "Account 1 balance: $" &lt;&lt; account1.get_balance() &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Static Members and Friend Functions</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Class-level data and functions, plus friend access control.</p>
+                    <pre class="ml-4"><code class="language-cpp">class Counter {
+private:
+    int value_;
+    static int total_counters_;
+
+public:
+    Counter(int initial_value = 0) : value_(initial_value) {
+        ++total_counters_;
+    }
+
+    ~Counter() {
+        --total_counters_;
+    }
+
+    void increment() { ++value_; }
+    void decrement() { --value_; }
+
+    int get_value() const { return value_; }
+
+    // Static member function
+    static int get_total_counters() {
+        return total_counters_;
+    }
+
+    // Friend function declaration
+    friend void reset_counter(Counter& counter);
+    friend class CounterManager;
+
+    // Friend operator
+    friend std::ostream& operator&lt;&lt;(std::ostream& os, const Counter& counter);
+};
+
+// Static member definition (required outside class)
+int Counter::total_counters_ = 0;
+
+// Friend function definition
+void reset_counter(Counter& counter) {
+    counter.value_ = 0; // Can access private members
+}
+
+// Friend operator definition
+std::ostream& operator&lt;&lt;(std::ostream& os, const Counter& counter) {
+    os &lt;&lt; "Counter value: " &lt;&lt; counter.value_;
+    return os;
+}
+
+// Friend class
+class CounterManager {
+public:
+    void manage_counter(Counter& counter) {
+        counter.value_ = 100; // Can access private members
+    }
+};
+
+void static_and_friend_example() {
+    Counter c1(5);
+    Counter c2(10);
+
+    std::cout &lt;&lt; "Total counters: " &lt;&lt; Counter::get_total_counters() &lt;&lt; std::endl; // 2
+
+    std::cout &lt;&lt; c1 &lt;&lt; std::endl; // Friend operator
+
+    reset_counter(c1); // Friend function
+    std::cout &lt;&lt; c1 &lt;&lt; std::endl;
+
+    CounterManager manager;
+    manager.manage_counter(c2);
+    std::cout &lt;&lt; c2 &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Inheritance</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Single Inheritance</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Basic inheritance with public, protected, and private access modifiers.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Base class
+class Animal {
+protected:
+    std::string name_;
+    int age_;
+
+public:
+    Animal(const std::string& name, int age) : name_(name), age_(age) {
+        std::cout &lt;&lt; "Animal constructor: " &lt;&lt; name_ &lt;&lt; std::endl;
+    }
+
+    virtual ~Animal() {
+        std::cout &lt;&lt; "Animal destructor: " &lt;&lt; name_ &lt;&lt; std::endl;
+    }
+
+    virtual void make_sound() const {
+        std::cout &lt;&lt; name_ &lt;&lt; " makes a generic animal sound" &lt;&lt; std::endl;
+    }
+
+    virtual void move() const {
+        std::cout &lt;&lt; name_ &lt;&lt; " moves around" &lt;&lt; std::endl;
+    }
+
+    void eat() const {
+        std::cout &lt;&lt; name_ &lt;&lt; " is eating" &lt;&lt; std::endl;
+    }
+
+    // Getters
+    const std::string& get_name() const { return name_; }
+    int get_age() const { return age_; }
+};
+
+// Derived class with public inheritance
+class Dog : public Animal {
+private:
+    std::string breed_;
+
+public:
+    Dog(const std::string& name, int age, const std::string& breed)
+        : Animal(name, age), breed_(breed) {
+        std::cout &lt;&lt; "Dog constructor: " &lt;&lt; name_ &lt;&lt; " (" &lt;&lt; breed_ &lt;&lt; ")" &lt;&lt; std::endl;
+    }
+
+    ~Dog() {
+        std::cout &lt;&lt; "Dog destructor: " &lt;&lt; name_ &lt;&lt; std::endl;
+    }
+
+    // Override virtual function
+    void make_sound() const override {
+        std::cout &lt;&lt; name_ &lt;&lt; " barks: Woof! Woof!" &lt;&lt; std::endl;
+    }
+
+    void move() const override {
+        std::cout &lt;&lt; name_ &lt;&lt; " runs on four legs" &lt;&lt; std::endl;
+    }
+
+    // New function specific to Dog
+    void fetch() const {
+        std::cout &lt;&lt; name_ &lt;&lt; " fetches the ball" &lt;&lt; std::endl;
+    }
+
+    const std::string& get_breed() const { return breed_; }
+};
+
+// Another derived class
+class Cat : public Animal {
+private:
+    bool is_indoor_;
+
+public:
+    Cat(const std::string& name, int age, bool is_indoor)
+        : Animal(name, age), is_indoor_(is_indoor) {
+        std::cout &lt;&lt; "Cat constructor: " &lt;&lt; name_ &lt;&lt; std::endl;
+    }
+
+    ~Cat() {
+        std::cout &lt;&lt; "Cat destructor: " &lt;&lt; name_ &lt;&lt; std::endl;
+    }
+
+    void make_sound() const override {
+        std::cout &lt;&lt; name_ &lt;&lt; " meows: Meow! Meow!" &lt;&lt; std::endl;
+    }
+
+    void move() const override {
+        std::cout &lt;&lt; name_ &lt;&lt; " silently stalks" &lt;&lt; std::endl;
+    }
+
+    void climb() const {
+        std::cout &lt;&lt; name_ &lt;&lt; " climbs up high" &lt;&lt; std::endl;
+    }
+
+    bool is_indoor() const { return is_indoor_; }
+};
+
+void inheritance_example() {
+    Dog buddy("Buddy", 3, "Golden Retriever");
+    Cat whiskers("Whiskers", 2, true);
+
+    // Polymorphic behavior
+    Animal* animals[] = {&buddy, &whiskers};
+
+    for (const auto& animal : animals) {
+        animal-&gt;make_sound(); // Calls overridden functions
+        animal-&gt;move();
+        animal-&gt;eat(); // Calls base class function
+        std::cout &lt;&lt; "---" &lt;&lt; std::endl;
+    }
+
+    // Access derived class specific functions
+    buddy.fetch();
+    whiskers.climb();
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Multiple Inheritance</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Inheriting from multiple base classes and handling diamond problem.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Base classes
+class Flyable {
+public:
+    virtual ~Flyable() = default;
+    virtual void fly() const {
+        std::cout &lt;&lt; "Flying through the air" &lt;&lt; std::endl;
+    }
+    virtual int get_altitude() const { return 0; }
+};
+
+class Swimmable {
+public:
+    virtual ~Swimmable() = default;
+    virtual void swim() const {
+        std::cout &lt;&lt; "Swimming through water" &lt;&lt; std::endl;
+    }
+    virtual int get_depth() const { return 0; }
+};
+
+// Multiple inheritance
+class Duck : public Animal, public Flyable, public Swimmable {
+public:
+    Duck(const std::string& name, int age) : Animal(name, age) {
+        std::cout &lt;&lt; "Duck constructor: " &lt;&lt; name_ &lt;&lt; std::endl;
+    }
+
+    ~Duck() {
+        std::cout &lt;&lt; "Duck destructor: " &lt;&lt; name_ &lt;&lt; std::endl;
+    }
+
+    // Override Animal methods
+    void make_sound() const override {
+        std::cout &lt;&lt; name_ &lt;&lt; " quacks: Quack! Quack!" &lt;&lt; std::endl;
+    }
+
+    void move() const override {
+        std::cout &lt;&lt; name_ &lt;&lt; " waddles on land" &lt;&lt; std::endl;
+    }
+
+    // Override Flyable methods
+    void fly() const override {
+        std::cout &lt;&lt; name_ &lt;&lt; " flies with webbed feet tucked" &lt;&lt; std::endl;
+    }
+
+    int get_altitude() const override { return 500; }
+
+    // Override Swimmable methods
+    void swim() const override {
+        std::cout &lt;&lt; name_ &lt;&lt; " paddles with webbed feet" &lt;&lt; std::endl;
+    }
+
+    int get_depth() const override { return 10; }
+};
+
+// Diamond problem example with virtual inheritance
+class Vehicle {
+protected:
+    std::string brand_;
+
+public:
+    Vehicle(const std::string& brand) : brand_(brand) {
+        std::cout &lt;&lt; "Vehicle constructor: " &lt;&lt; brand_ &lt;&lt; std::endl;
+    }
+
+    virtual ~Vehicle() {
+        std::cout &lt;&lt; "Vehicle destructor: " &lt;&lt; brand_ &lt;&lt; std::endl;
+    }
+
+    const std::string& get_brand() const { return brand_; }
+};
+
+// Virtual inheritance to solve diamond problem
+class LandVehicle : public virtual Vehicle {
+public:
+    LandVehicle(const std::string& brand) : Vehicle(brand) {
+        std::cout &lt;&lt; "LandVehicle constructor" &lt;&lt; std::endl;
+    }
+
+    virtual void drive() const {
+        std::cout &lt;&lt; brand_ &lt;&lt; " is driving on land" &lt;&lt; std::endl;
+    }
+};
+
+class WaterVehicle : public virtual Vehicle {
+public:
+    WaterVehicle(const std::string& brand) : Vehicle(brand) {
+        std::cout &lt;&lt; "WaterVehicle constructor" &lt;&lt; std::endl;
+    }
+
+    virtual void sail() const {
+        std::cout &lt;&lt; brand_ &lt;&lt; " is sailing on water" &lt;&lt; std::endl;
+    }
+};
+
+class AmphibiousVehicle : public LandVehicle, public WaterVehicle {
+public:
+    AmphibiousVehicle(const std::string& brand)
+        : Vehicle(brand), LandVehicle(brand), WaterVehicle(brand) {
+        std::cout &lt;&lt; "AmphibiousVehicle constructor" &lt;&lt; std::endl;
+    }
+
+    void operate() const {
+        drive();
+        sail();
+        std::cout &lt;&lt; get_brand() &lt;&lt; " can operate on both land and water" &lt;&lt; std::endl;
+    }
+};
+
+void multiple_inheritance_example() {
+    Duck donald("Donald", 5);
+
+    // Use as Animal
+    Animal* animal_ptr = &donald;
+    animal_ptr-&gt;make_sound();
+
+    // Use as Flyable
+    Flyable* flyer_ptr = &donald;
+    flyer_ptr-&gt;fly();
+
+    // Use as Swimmable
+    Swimmable* swimmer_ptr = &donald;
+    swimmer_ptr-&gt;swim();
+
+    std::cout &lt;&lt; "---" &lt;&lt; std::endl;
+
+    // Diamond problem resolution
+    AmphibiousVehicle boat("DUKW");
+    boat.operate();
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Polymorphism</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Virtual Functions and Dynamic Dispatch</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Runtime polymorphism through virtual function tables.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Abstract base class with pure virtual functions
+class Shape {
+protected:
+    std::string color_;
+
+public:
+    Shape(const std::string& color) : color_(color) {}
+    virtual ~Shape() = default;
+
+    // Pure virtual functions (abstract interface)
+    virtual double area() const = 0;
+    virtual double perimeter() const = 0;
+    virtual void draw() const = 0;
+
+    // Virtual function with default implementation
+    virtual void describe() const {
+        std::cout &lt;&lt; "This is a " &lt;&lt; color_ &lt;&lt; " shape" &lt;&lt; std::endl;
+    }
+
+    // Non-virtual function
+    const std::string& get_color() const { return color_; }
+};
+
+class Circle : public Shape {
+private:
+    double radius_;
+
+public:
+    Circle(const std::string& color, double radius)
+        : Shape(color), radius_(radius) {}
+
+    double area() const override {
+        return M_PI * radius_ * radius_;
+    }
+
+    double perimeter() const override {
+        return 2 * M_PI * radius_;
+    }
+
+    void draw() const override {
+        std::cout &lt;&lt; "Drawing a " &lt;&lt; color_ &lt;&lt; " circle with radius " &lt;&lt; radius_ &lt;&lt; std::endl;
+    }
+
+    void describe() const override {
+        std::cout &lt;&lt; "This is a " &lt;&lt; color_ &lt;&lt; " circle with radius " &lt;&lt; radius_ &lt;&lt; std::endl;
+    }
+
+    double get_radius() const { return radius_; }
+};
+
+class Rectangle : public Shape {
+private:
+    double width_, height_;
+
+public:
+    Rectangle(const std::string& color, double width, double height)
+        : Shape(color), width_(width), height_(height) {}
+
+    double area() const override {
+        return width_ * height_;
+    }
+
+    double perimeter() const override {
+        return 2 * (width_ + height_);
+    }
+
+    void draw() const override {
+        std::cout &lt;&lt; "Drawing a " &lt;&lt; color_ &lt;&lt; " rectangle "
+                  &lt;&lt; width_ &lt;&lt; "x" &lt;&lt; height_ &lt;&lt; std::endl;
+    }
+
+    double get_width() const { return width_; }
+    double get_height() const { return height_; }
+};
+
+// Function that works with any Shape
+void process_shapes(const std::vector&lt;std::unique_ptr&lt;Shape&gt;&gt;& shapes) {
+    double total_area = 0.0;
+
+    for (const auto& shape : shapes) {
+        shape-&gt;draw();           // Virtual dispatch
+        shape-&gt;describe();       // Virtual dispatch
+
+        double shape_area = shape-&gt;area();  // Virtual dispatch
+        total_area += shape_area;
+
+        std::cout &lt;&lt; "Area: " &lt;&lt; shape_area &lt;&lt; ", Perimeter: "
+                  &lt;&lt; shape-&gt;perimeter() &lt;&lt; std::endl;
+        std::cout &lt;&lt; "---" &lt;&lt; std::endl;
+    }
+
+    std::cout &lt;&lt; "Total area of all shapes: " &lt;&lt; total_area &lt;&lt; std::endl;
+}
+
+void polymorphism_example() {
+    std::vector&lt;std::unique_ptr&lt;Shape&gt;&gt; shapes;
+
+    shapes.push_back(std::make_unique&lt;Circle&gt;("red", 5.0));
+    shapes.push_back(std::make_unique&lt;Rectangle&gt;("blue", 4.0, 6.0));
+    shapes.push_back(std::make_unique&lt;Circle&gt;("green", 3.0));
+
+    process_shapes(shapes);
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Function Overloading and Operator Overloading</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Compile-time polymorphism through function and operator overloading.</p>
+                    <pre class="ml-4"><code class="language-cpp">class Complex {
+private:
+    double real_, imag_;
+
+public:
+    // Constructors (function overloading)
+    Complex() : real_(0.0), imag_(0.0) {}
+    Complex(double real) : real_(real), imag_(0.0) {}
+    Complex(double real, double imag) : real_(real), imag_(imag) {}
+
+    // Getters
+    double real() const { return real_; }
+    double imag() const { return imag_; }
+
+    // Arithmetic operators
+    Complex operator+(const Complex& other) const {
+        return Complex(real_ + other.real_, imag_ + other.imag_);
+    }
+
+    Complex operator-(const Complex& other) const {
+        return Complex(real_ - other.real_, imag_ - other.imag_);
+    }
+
+    Complex operator*(const Complex& other) const {
+        return Complex(
+            real_ * other.real_ - imag_ * other.imag_,
+            real_ * other.imag_ + imag_ * other.real_
+        );
+    }
+
+    Complex operator/(const Complex& other) const {
+        double denominator = other.real_ * other.real_ + other.imag_ * other.imag_;
+        return Complex(
+            (real_ * other.real_ + imag_ * other.imag_) / denominator,
+            (imag_ * other.real_ - real_ * other.imag_) / denominator
+        );
+    }
+
+    // Compound assignment operators
+    Complex& operator+=(const Complex& other) {
+        real_ += other.real_;
+        imag_ += other.imag_;
+        return *this;
+    }
+
+    Complex& operator-=(const Complex& other) {
+        real_ -= other.real_;
+        imag_ -= other.imag_;
+        return *this;
+    }
+
+    // Unary operators
+    Complex operator-() const {
+        return Complex(-real_, -imag_);
+    }
+
+    Complex operator+() const {
+        return *this;
+    }
+
+    // Increment/Decrement (prefix and postfix)
+    Complex& operator++() {  // Prefix
+        ++real_;
+        return *this;
+    }
+
+    Complex operator++(int) {  // Postfix
+        Complex temp = *this;
+        ++real_;
+        return temp;
+    }
+
+    // Comparison operators
+    bool operator==(const Complex& other) const {
+        return (real_ == other.real_) && (imag_ == other.imag_);
+    }
+
+    bool operator!=(const Complex& other) const {
+        return !(*this == other);
+    }
+
+    // Conversion operators
+    explicit operator double() const {
+        return std::sqrt(real_ * real_ + imag_ * imag_); // Magnitude
+    }
+
+    explicit operator bool() const {
+        return real_ != 0.0 || imag_ != 0.0;
+    }
+
+    // Function call operator
+    double operator()(int power) const {
+        // Return the magnitude raised to the given power
+        double magnitude = static_cast&lt;double&gt;(*this);
+        return std::pow(magnitude, power);
+    }
+
+    // Subscript operator (for real and imaginary parts)
+    double& operator[](int index) {
+        return (index == 0) ? real_ : imag_;
+    }
+
+    const double& operator[](int index) const {
+        return (index == 0) ? real_ : imag_;
+    }
+};
+
+// Stream operators (must be non-member functions)
+std::ostream& operator&lt;&lt;(std::ostream& os, const Complex& c) {
+    os &lt;&lt; c.real();
+    if (c.imag() &gt;= 0) {
+        os &lt;&lt; " + " &lt;&lt; c.imag() &lt;&lt; "i";
+    } else {
+        os &lt;&lt; " - " &lt;&lt; -c.imag() &lt;&lt; "i";
+    }
+    return os;
+}
+
+std::istream& operator&gt;&gt;(std::istream& is, Complex& c) {
+    double real, imag;
+    is &gt;&gt; real &gt;&gt; imag;
+    c = Complex(real, imag);
+    return is;
+}
+
+// Function overloading examples
+void print_info(const Complex& c) {
+    std::cout &lt;&lt; "Complex number: " &lt;&lt; c &lt;&lt; std::endl;
+}
+
+void print_info(double d) {
+    std::cout &lt;&lt; "Real number: " &lt;&lt; d &lt;&lt; std::endl;
+}
+
+void print_info(int i) {
+    std::cout &lt;&lt; "Integer: " &lt;&lt; i &lt;&lt; std::endl;
+}
+
+void operator_overloading_example() {
+    Complex c1(3.0, 4.0);
+    Complex c2(1.0, 2.0);
+
+    // Arithmetic operations
+    Complex c3 = c1 + c2;
+    Complex c4 = c1 * c2;
+
+    std::cout &lt;&lt; "c1 = " &lt;&lt; c1 &lt;&lt; std::endl;
+    std::cout &lt;&lt; "c2 = " &lt;&lt; c2 &lt;&lt; std::endl;
+    std::cout &lt;&lt; "c1 + c2 = " &lt;&lt; c3 &lt;&lt; std::endl;
+    std::cout &lt;&lt; "c1 * c2 = " &lt;&lt; c4 &lt;&lt; std::endl;
+
+    // Function call operator
+    std::cout &lt;&lt; "Magnitude of c1 squared: " &lt;&lt; c1(2) &lt;&lt; std::endl;
+
+    // Subscript operator
+    std::cout &lt;&lt; "Real part of c1: " &lt;&lt; c1[0] &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Imaginary part of c1: " &lt;&lt; c1[1] &lt;&lt; std::endl;
+
+    // Conversion operators
+    double magnitude = static_cast&lt;double&gt;(c1);
+    std::cout &lt;&lt; "Magnitude of c1: " &lt;&lt; magnitude &lt;&lt; std::endl;
+
+    // Function overloading
+    print_info(c1);
+    print_info(3.14);
+    print_info(42);
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Advanced OOP Concepts</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Abstract Classes and Interfaces</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Defining contracts and abstract base classes for inheritance hierarchies.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Pure interface (all functions are pure virtual)
+class Drawable {
+public:
+    virtual ~Drawable() = default;
+    virtual void draw() const = 0;
+    virtual void set_position(double x, double y) = 0;
+    virtual std::pair&lt;double, double&gt; get_position() const = 0;
+};
+
+// Another interface
+class Movable {
+public:
+    virtual ~Movable() = default;
+    virtual void move(double dx, double dy) = 0;
+    virtual double get_speed() const = 0;
+    virtual void set_speed(double speed) = 0;
+};
+
+// Abstract base class (mix of pure virtual and implemented functions)
+class GameObject : public Drawable, public Movable {
+protected:
+    double x_, y_;
+    double speed_;
+    std::string name_;
+
+public:
+    GameObject(const std::string& name, double x = 0.0, double y = 0.0, double speed = 1.0)
+        : x_(x), y_(y), speed_(speed), name_(name) {}
+
+    virtual ~GameObject() = default;
+
+    // Implement some interface methods
+    void set_position(double x, double y) override {
+        x_ = x;
+        y_ = y;
+    }
+
+    std::pair&lt;double, double&gt; get_position() const override {
+        return {x_, y_};
+    }
+
+    void move(double dx, double dy) override {
+        x_ += dx * speed_;
+        y_ += dy * speed_;
+    }
+
+    double get_speed() const override {
+        return speed_;
+    }
+
+    void set_speed(double speed) override {
+        speed_ = speed;
+    }
+
+    // Pure virtual functions that derived classes must implement
+    virtual void update() = 0;
+    virtual void handle_collision(GameObject& other) = 0;
+
+    // Implemented virtual function with default behavior
+    virtual void describe() const {
+        std::cout &lt;&lt; name_ &lt;&lt; " at position (" &lt;&lt; x_ &lt;&lt; ", " &lt;&lt; y_ &lt;&lt; ")" &lt;&lt; std::endl;
+    }
+
+    const std::string& get_name() const { return name_; }
+};
+
+// Concrete implementation
+class Player : public GameObject {
+private:
+    int health_;
+    int score_;
+
+public:
+    Player(const std::string& name, double x = 0.0, double y = 0.0)
+        : GameObject(name, x, y, 2.0), health_(100), score_(0) {}
+
+    void draw() const override {
+        std::cout &lt;&lt; "Drawing player " &lt;&lt; name_ &lt;&lt; " at (" &lt;&lt; x_ &lt;&lt; ", " &lt;&lt; y_ &lt;&lt; ")" &lt;&lt; std::endl;
+    }
+
+    void update() override {
+        // Player-specific update logic
+        if (health_ &lt; 100) {
+            health_ += 1; // Regenerate health slowly
+        }
+    }
+
+    void handle_collision(GameObject& other) override {
+        std::cout &lt;&lt; name_ &lt;&lt; " collided with " &lt;&lt; other.get_name() &lt;&lt; std::endl;
+        // Handle collision logic
+    }
+
+    void describe() const override {
+        GameObject::describe();
+        std::cout &lt;&lt; "Health: " &lt;&lt; health_ &lt;&lt; ", Score: " &lt;&lt; score_ &lt;&lt; std::endl;
+    }
+
+    // Player-specific methods
+    void take_damage(int damage) {
+        health_ = std::max(0, health_ - damage);
+    }
+
+    void add_score(int points) {
+        score_ += points;
+    }
+
+    int get_health() const { return health_; }
+    int get_score() const { return score_; }
+};
+
+class Enemy : public GameObject {
+private:
+    int damage_;
+    bool is_aggressive_;
+
+public:
+    Enemy(const std::string& name, double x, double y, int damage = 10)
+        : GameObject(name, x, y, 1.5), damage_(damage), is_aggressive_(true) {}
+
+    void draw() const override {
+        std::cout &lt;&lt; "Drawing enemy " &lt;&lt; name_ &lt;&lt; " at (" &lt;&lt; x_ &lt;&lt; ", " &lt;&lt; y_ &lt;&lt; ")" &lt;&lt; std::endl;
+    }
+
+    void update() override {
+        // Enemy AI logic
+        if (is_aggressive_) {
+            // Move towards player (simplified)
+            move(0.1, 0.1);
+        }
+    }
+
+    void handle_collision(GameObject& other) override {
+        std::cout &lt;&lt; name_ &lt;&lt; " attacks " &lt;&lt; other.get_name() &lt;&lt; std::endl;
+        // Attack logic
+    }
+
+    int get_damage() const { return damage_; }
+    void set_aggressive(bool aggressive) { is_aggressive_ = aggressive; }
+};
+
+void abstract_classes_example() {
+    std::vector&lt;std::unique_ptr&lt;GameObject&gt;&gt; game_objects;
+
+    game_objects.push_back(std::make_unique&lt;Player&gt;("Hero", 0.0, 0.0));
+    game_objects.push_back(std::make_unique&lt;Enemy&gt;("Goblin", 10.0, 10.0, 15));
+    game_objects.push_back(std::make_unique&lt;Enemy&gt;("Orc", 20.0, 5.0, 25));
+
+    // Game loop simulation
+    for (int frame = 0; frame &lt; 3; ++frame) {
+        std::cout &lt;&lt; "Frame " &lt;&lt; frame + 1 &lt;&lt; ":" &lt;&lt; std::endl;
+
+        for (auto& obj : game_objects) {
+            obj-&gt;update();  // Virtual dispatch
+            obj-&gt;draw();    // Virtual dispatch
+            obj-&gt;describe(); // Virtual dispatch
+            std::cout &lt;&lt; "---" &lt;&lt; std::endl;
+        }
+    }
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Template Classes and Generic Programming</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Combining OOP with templates for generic class design.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Generic container class template
+template&lt;typename T&gt;
+class Container {
+private:
+    std::vector&lt;T&gt; data_;
+
+public:
+    Container() = default;
+
+    template&lt;typename U&gt;
+    Container(std::initializer_list&lt;U&gt; init) : data_(init) {}
+
+    void add(const T& item) {
+        data_.push_back(item);
+    }
+
+    void add(T&& item) {
+        data_.push_back(std::move(item));
+    }
+
+    template&lt;typename... Args&gt;
+    void emplace(Args&&... args) {
+        data_.emplace_back(std::forward&lt;Args&gt;(args)...);
+    }
+
+    const T& get(size_t index) const {
+        return data_.at(index);
+    }
+
+    T& get(size_t index) {
+        return data_.at(index);
+    }
+
+    size_t size() const { return data_.size(); }
+    bool empty() const { return data_.empty(); }
+
+    // Iterator support
+    auto begin() { return data_.begin(); }
+    auto end() { return data_.end(); }
+    auto begin() const { return data_.begin(); }
+    auto end() const { return data_.end(); }
+
+    // Template member function
+    template&lt;typename Predicate&gt;
+    std::vector&lt;T&gt; filter(Predicate pred) const {
+        std::vector&lt;T&gt; result;
+        std::copy_if(data_.begin(), data_.end(), std::back_inserter(result), pred);
+        return result;
+    }
+
+    template&lt;typename Func&gt;
+    void for_each(Func func) {
+        std::for_each(data_.begin(), data_.end(), func);
+    }
+};
+
+// Template specialization
+template&lt;&gt;
+class Container&lt;bool&gt; {
+private:
+    std::vector&lt;bool&gt; data_;
+
+public:
+    void add(bool value) {
+        data_.push_back(value);
+        std::cout &lt;&lt; "Added boolean value: " &lt;&lt; (value ? "true" : "false") &lt;&lt; std::endl;
+    }
+
+    bool get(size_t index) const {
+        return data_.at(index);
+    }
+
+    size_t size() const { return data_.size(); }
+
+    size_t count_true() const {
+        return std::count(data_.begin(), data_.end(), true);
+    }
+
+    size_t count_false() const {
+        return std::count(data_.begin(), data_.end(), false);
+    }
+};
+
+// Template inheritance
+template&lt;typename T&gt;
+class SortedContainer : public Container&lt;T&gt; {
+private:
+    bool is_sorted_;
+
+public:
+    SortedContainer() : is_sorted_(true) {}
+
+    void add(const T& item) override {
+        Container&lt;T&gt;::add(item);
+        is_sorted_ = false;
+    }
+
+    void sort() {
+        std::sort(this-&gt;data_.begin(), this-&gt;data_.end());
+        is_sorted_ = true;
+    }
+
+    bool is_sorted() const { return is_sorted_; }
+
+    template&lt;typename Compare&gt;
+    void sort(Compare comp) {
+        std::sort(this-&gt;data_.begin(), this-&gt;data_.end(), comp);
+        is_sorted_ = true;
+    }
+
+    T find_min() {
+        if (!is_sorted_) sort();
+        return this-&gt;data_.empty() ? T{} : this-&gt;data_.front();
+    }
+
+    T find_max() {
+        if (!is_sorted_) sort();
+        return this-&gt;data_.empty() ? T{} : this-&gt;data_.back();
+    }
+};
+
+void template_classes_example() {
+    // Generic container with integers
+    Container&lt;int&gt; int_container{1, 5, 3, 8, 2};
+
+    std::cout &lt;&lt; "Integer container contents: ";
+    for (const auto& item : int_container) {
+        std::cout &lt;&lt; item &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+
+    // Filter even numbers
+    auto even_numbers = int_container.filter([](int n) { return n % 2 == 0; });
+    std::cout &lt;&lt; "Even numbers: ";
+    for (const auto& num : even_numbers) {
+        std::cout &lt;&lt; num &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+
+    // Boolean specialization
+    Container&lt;bool&gt; bool_container;
+    bool_container.add(true);
+    bool_container.add(false);
+    bool_container.add(true);
+
+    std::cout &lt;&lt; "Boolean container - True count: " &lt;&lt; bool_container.count_true()
+              &lt;&lt; ", False count: " &lt;&lt; bool_container.count_false() &lt;&lt; std::endl;
+
+    // Sorted container
+    SortedContainer&lt;std::string&gt; sorted_strings;
+    sorted_strings.add("zebra");
+    sorted_strings.add("apple");
+    sorted_strings.add("banana");
+
+    std::cout &lt;&lt; "Before sorting: ";
+    for (const auto& str : sorted_strings) {
+        std::cout &lt;&lt; str &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+
+    sorted_strings.sort();
+    std::cout &lt;&lt; "After sorting: ";
+    for (const auto& str : sorted_strings) {
+        std::cout &lt;&lt; str &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+
+    std::cout &lt;&lt; "Min: " &lt;&lt; sorted_strings.find_min()
+              &lt;&lt; ", Max: " &lt;&lt; sorted_strings.find_max() &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Design Patterns in OOP</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Singleton Pattern</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Ensuring a class has only one instance with global access.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Thread-safe Singleton implementation
+class Database {
+private:
+    static std::unique_ptr&lt;Database&gt; instance_;
+    static std::mutex mutex_;
+
+    std::string connection_string_;
+    bool connected_;
+
+    // Private constructor
+    Database(const std::string& connection_string)
+        : connection_string_(connection_string), connected_(false) {
+        connect();
+    }
+
+    void connect() {
+        // Simulate database connection
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        connected_ = true;
+        std::cout &lt;&lt; "Connected to database: " &lt;&lt; connection_string_ &lt;&lt; std::endl;
+    }
+
+public:
+    // Delete copy constructor and assignment operator
+    Database(const Database&) = delete;
+    Database& operator=(const Database&) = delete;
+
+    static Database& get_instance(const std::string& connection_string = "default") {
+        std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+        if (instance_ == nullptr) {
+            instance_ = std::unique_ptr&lt;Database&gt;(new Database(connection_string));
+        }
+        return *instance_;
+    }
+
+    void execute_query(const std::string& query) {
+        if (connected_) {
+            std::cout &lt;&lt; "Executing query: " &lt;&lt; query &lt;&lt; std::endl;
+        } else {
+            std::cout &lt;&lt; "Database not connected!" &lt;&lt; std::endl;
+        }
+    }
+
+    bool is_connected() const { return connected_; }
+    const std::string& get_connection_string() const { return connection_string_; }
+};
+
+// Static member definitions
+std::unique_ptr&lt;Database&gt; Database::instance_ = nullptr;
+std::mutex Database::mutex_;
+
+// Alternative: Meyer's Singleton (C++11 thread-safe)
+class Logger {
+private:
+    std::ofstream log_file_;
+
+    Logger() : log_file_("application.log", std::ios::app) {
+        std::cout &lt;&lt; "Logger initialized" &lt;&lt; std::endl;
+    }
+
+public:
+    ~Logger() {
+        if (log_file_.is_open()) {
+            log_file_.close();
+        }
+    }
+
+    // Delete copy constructor and assignment operator
+    Logger(const Logger&) = delete;
+    Logger& operator=(const Logger&) = delete;
+
+    static Logger& get_instance() {
+        static Logger instance; // Thread-safe in C++11
+        return instance;
+    }
+
+    void log(const std::string& level, const std::string& message) {
+        auto now = std::chrono::system_clock::now();
+        auto time_t = std::chrono::system_clock::to_time_t(now);
+
+        std::cout &lt;&lt; "[" &lt;&lt; level &lt;&lt; "] " &lt;&lt; message &lt;&lt; std::endl;
+
+        if (log_file_.is_open()) {
+            log_file_ &lt;&lt; "[" &lt;&lt; std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S")
+                     &lt;&lt; "] [" &lt;&lt; level &lt;&lt; "] " &lt;&lt; message &lt;&lt; std::endl;
+            log_file_.flush();
+        }
+    }
+
+    void info(const std::string& message) { log("INFO", message); }
+    void warning(const std::string& message) { log("WARNING", message); }
+    void error(const std::string& message) { log("ERROR", message); }
+};</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Factory Pattern</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Creating objects without specifying exact classes.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Product interface
+class Document {
+public:
+    virtual ~Document() = default;
+    virtual void open() = 0;
+    virtual void save() = 0;
+    virtual void close() = 0;
+    virtual std::string get_type() const = 0;
+};
+
+// Concrete products
+class PDFDocument : public Document {
+private:
+    std::string filename_;
+
+public:
+    PDFDocument(const std::string& filename) : filename_(filename) {}
+
+    void open() override {
+        std::cout &lt;&lt; "Opening PDF document: " &lt;&lt; filename_ &lt;&lt; std::endl;
+    }
+
+    void save() override {
+        std::cout &lt;&lt; "Saving PDF document: " &lt;&lt; filename_ &lt;&lt; std::endl;
+    }
+
+    void close() override {
+        std::cout &lt;&lt; "Closing PDF document: " &lt;&lt; filename_ &lt;&lt; std::endl;
+    }
+
+    std::string get_type() const override {
+        return "PDF";
+    }
+};
+
+class WordDocument : public Document {
+private:
+    std::string filename_;
+
+public:
+    WordDocument(const std::string& filename) : filename_(filename) {}
+
+    void open() override {
+        std::cout &lt;&lt; "Opening Word document: " &lt;&lt; filename_ &lt;&lt; std::endl;
+    }
+
+    void save() override {
+        std::cout &lt;&lt; "Saving Word document: " &lt;&lt; filename_ &lt;&lt; std::endl;
+    }
+
+    void close() override {
+        std::cout &lt;&lt; "Closing Word document: " &lt;&lt; filename_ &lt;&lt; std::endl;
+    }
+
+    std::string get_type() const override {
+        return "Word";
+    }
+};
+
+// Simple Factory
+class DocumentFactory {
+public:
+    enum class DocumentType {
+        PDF,
+        WORD
+    };
+
+    static std::unique_ptr&lt;Document&gt; create_document(DocumentType type, const std::string& filename) {
+        switch (type) {
+            case DocumentType::PDF:
+                return std::make_unique&lt;PDFDocument&gt;(filename);
+            case DocumentType::WORD:
+                return std::make_unique&lt;WordDocument&gt;(filename);
+            default:
+                throw std::invalid_argument("Unknown document type");
+        }
+    }
+
+    // Factory method with string parameter
+    static std::unique_ptr&lt;Document&gt; create_document(const std::string& type, const std::string& filename) {
+        if (type == "pdf" || type == "PDF") {
+            return std::make_unique&lt;PDFDocument&gt;(filename);
+        } else if (type == "word" || type == "WORD" || type == "doc") {
+            return std::make_unique&lt;WordDocument&gt;(filename);
+        } else {
+            throw std::invalid_argument("Unknown document type: " + type);
+        }
+    }
+};
+
+// Abstract Factory pattern
+class DocumentCreator {
+public:
+    virtual ~DocumentCreator() = default;
+    virtual std::unique_ptr&lt;Document&gt; create_document(const std::string& filename) = 0;
+    virtual std::string get_supported_extension() const = 0;
+};
+
+class PDFCreator : public DocumentCreator {
+public:
+    std::unique_ptr&lt;Document&gt; create_document(const std::string& filename) override {
+        return std::make_unique&lt;PDFDocument&gt;(filename);
+    }
+
+    std::string get_supported_extension() const override {
+        return ".pdf";
+    }
+};
+
+class WordCreator : public DocumentCreator {
+public:
+    std::unique_ptr&lt;Document&gt; create_document(const std::string& filename) override {
+        return std::make_unique&lt;WordDocument&gt;(filename);
+    }
+
+    std::string get_supported_extension() const override {
+        return ".docx";
+    }
+};
+
+void factory_pattern_example() {
+    // Simple Factory usage
+    auto pdf_doc = DocumentFactory::create_document(DocumentFactory::DocumentType::PDF, "report.pdf");
+    auto word_doc = DocumentFactory::create_document("word", "letter.docx");
+
+    pdf_doc-&gt;open();
+    pdf_doc-&gt;save();
+
+    word_doc-&gt;open();
+    word_doc-&gt;save();
+
+    // Abstract Factory usage
+    std::vector&lt;std::unique_ptr&lt;DocumentCreator&gt;&gt; creators;
+    creators.push_back(std::make_unique&lt;PDFCreator&gt;());
+    creators.push_back(std::make_unique&lt;WordCreator&gt;());
+
+    for (const auto& creator : creators) {
+        auto doc = creator-&gt;create_document("example" + creator-&gt;get_supported_extension());
+        std::cout &lt;&lt; "Created document of type: " &lt;&lt; doc-&gt;get_type() &lt;&lt; std::endl;
+        doc-&gt;open();
+        doc-&gt;close();
+    }
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Observer Pattern</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Defining one-to-many dependency between objects.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Observer interface
+class Observer {
+public:
+    virtual ~Observer() = default;
+    virtual void update(const std::string& message) = 0;
+    virtual std::string get_name() const = 0;
+};
+
+// Subject (Observable) interface
+class Subject {
+public:
+    virtual ~Subject() = default;
+    virtual void attach(std::shared_ptr&lt;Observer&gt; observer) = 0;
+    virtual void detach(std::shared_ptr&lt;Observer&gt; observer) = 0;
+    virtual void notify(const std::string& message) = 0;
+};
+
+// Concrete Subject
+class NewsAgency : public Subject {
+private:
+    std::vector&lt;std::weak_ptr&lt;Observer&gt;&gt; observers_;
+    std::string latest_news_;
+
+public:
+    void attach(std::shared_ptr&lt;Observer&gt; observer) override {
+        observers_.push_back(observer);
+        std::cout &lt;&lt; "Attached observer: " &lt;&lt; observer-&gt;get_name() &lt;&lt; std::endl;
+    }
+
+    void detach(std::shared_ptr&lt;Observer&gt; observer) override {
+        auto it = std::remove_if(observers_.begin(), observers_.end(),
+            [&observer](const std::weak_ptr&lt;Observer&gt;& weak_obs) {
+                if (auto obs = weak_obs.lock()) {
+                    return obs.get() == observer.get();
+                }
+                return true; // Remove expired weak_ptr
+            });
+
+        if (it != observers_.end()) {
+            std::cout &lt;&lt; "Detached observer: " &lt;&lt; observer-&gt;get_name() &lt;&lt; std::endl;
+            observers_.erase(it, observers_.end());
+        }
+    }
+
+    void notify(const std::string& message) override {
+        latest_news_ = message;
+        std::cout &lt;&lt; "News Agency broadcasting: " &lt;&lt; message &lt;&lt; std::endl;
+
+        // Clean up expired observers and notify active ones
+        auto it = std::remove_if(observers_.begin(), observers_.end(),
+            [&message](const std::weak_ptr&lt;Observer&gt;& weak_obs) {
+                if (auto obs = weak_obs.lock()) {
+                    obs-&gt;update(message);
+                    return false; // Keep this observer
+                }
+                return true; // Remove expired observer
+            });
+
+        observers_.erase(it, observers_.end());
+    }
+
+    void publish_news(const std::string& news) {
+        notify(news);
+    }
+
+    const std::string& get_latest_news() const {
+        return latest_news_;
+    }
+
+    size_t observer_count() const {
+        return std::count_if(observers_.begin(), observers_.end(),
+            [](const std::weak_ptr&lt;Observer&gt;& weak_obs) {
+                return !weak_obs.expired();
+            });
+    }
+};
+
+// Concrete Observers
+class NewsChannel : public Observer {
+private:
+    std::string channel_name_;
+
+public:
+    NewsChannel(const std::string& name) : channel_name_(name) {}
+
+    void update(const std::string& message) override {
+        std::cout &lt;&lt; "[" &lt;&lt; channel_name_ &lt;&lt; "] Breaking News: " &lt;&lt; message &lt;&lt; std::endl;
+    }
+
+    std::string get_name() const override {
+        return channel_name_;
+    }
+};
+
+class Newspaper : public Observer {
+private:
+    std::string newspaper_name_;
+
+public:
+    Newspaper(const std::string& name) : newspaper_name_(name) {}
+
+    void update(const std::string& message) override {
+        std::cout &lt;&lt; "[" &lt;&lt; newspaper_name_ &lt;&lt; "] Headline: " &lt;&lt; message &lt;&lt; std::endl;
+    }
+
+    std::string get_name() const override {
+        return newspaper_name_;
+    }
+};
+
+void observer_pattern_example() {
+    auto news_agency = std::make_shared&lt;NewsAgency&gt;();
+
+    // Create observers
+    auto cnn = std::make_shared&lt;NewsChannel&gt;("CNN");
+    auto bbc = std::make_shared&lt;NewsChannel&gt;("BBC");
+    auto times = std::make_shared&lt;Newspaper&gt;("The Times");
+
+    // Attach observers
+    news_agency-&gt;attach(cnn);
+    news_agency-&gt;attach(bbc);
+    news_agency-&gt;attach(times);
+
+    std::cout &lt;&lt; "Active observers: " &lt;&lt; news_agency-&gt;observer_count() &lt;&lt; std::endl;
+
+    // Publish news
+    news_agency-&gt;publish_news("Stock market reaches all-time high!");
+    std::cout &lt;&lt; "---" &lt;&lt; std::endl;
+
+    // Detach one observer
+    news_agency-&gt;detach(bbc);
+    news_agency-&gt;publish_news("New technology breakthrough announced!");
+    std::cout &lt;&lt; "---" &lt;&lt; std::endl;
+
+    // Simulate observer going out of scope
+    {
+        auto local_observer = std::make_shared&lt;NewsChannel&gt;("Local News");
+        news_agency-&gt;attach(local_observer);
+        news_agency-&gt;publish_news("Local event happening now!");
+    } // local_observer goes out of scope
+
+    std::cout &lt;&lt; "Active observers after scope exit: " &lt;&lt; news_agency-&gt;observer_count() &lt;&lt; std::endl;
+    news_agency-&gt;publish_news("Final news update!");
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,596 @@
+<div id="unordered_set-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::unordered_set In-Depth</h2>
+    <p class="mb-4 text-gray-400">A hash-based container that stores unique elements in no particular order. It provides fast insertion, deletion, and search operations with average O(1) time complexity. Header: #include &lt;unordered_set&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Characteristics:</strong> O(1) average case for insertion, deletion, and search; O(n) worst case when many hash collisions occur; automatic memory management with dynamic hash table resizing.</p>
+
+    <div class="toc-container bg-gray-700 rounded-lg p-4 mb-6">
+        <h4 class="text-lg font-semibold text-cyan-300 mb-3">📋 Table of Contents</h4>
+        <ul class="space-y-2 text-sm">
+            <li><a href="#hash-table-implementation" class="text-cyan-400 hover:text-cyan-200 transition-colors">Hash Table Implementation</a></li>
+            <li><a href="#constructors" class="text-cyan-400 hover:text-cyan-200 transition-colors">Constructors</a></li>
+            <li><a href="#basic-operations" class="text-cyan-400 hover:text-cyan-200 transition-colors">Basic Operations</a></li>
+            <li><a href="#bucket-interface" class="text-cyan-400 hover:text-cyan-200 transition-colors">Bucket Interface</a></li>
+            <li><a href="#custom-hash-functions" class="text-cyan-400 hover:text-cyan-200 transition-colors">Custom Hash Functions</a></li>
+            <li><a href="#performance-comparison" class="text-cyan-400 hover:text-cyan-200 transition-colors">Performance Comparison</a></li>
+            <li><a href="#common-patterns" class="text-cyan-400 hover:text-cyan-200 transition-colors">Common Patterns</a></li>
+        </ul>
+    </div>
+
+    <div class="space-y-12">
+        <div>
+            <h3 id="hash-table-implementation" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Hash Table Implementation</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Hash Function</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Uses a hash function to map elements to bucket indices. The hash function should distribute elements uniformly across buckets to minimize collisions.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; numbers;
+// Internally uses std::hash&lt;int&gt; to compute hash values
+// hash(42) might return 2654435769, then modulo bucket_count()</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Collision Resolution</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Uses chaining (linked lists) to handle hash collisions. Elements with the same hash value are stored in the same bucket.</p>
+                    <pre class="ml-4"><code class="language-cpp">// If hash(42) % bucket_count == hash(100) % bucket_count,
+// both 42 and 100 will be stored in the same bucket as a linked list</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Load Factor and Rehashing</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Load factor = size() / bucket_count(). When it exceeds max_load_factor() (default 1.0), the container rehashes to maintain performance.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; uset;
+std::cout &lt;&lt; "Load factor: " &lt;&lt; uset.load_factor() &lt;&lt; std::endl;
+std::cout &lt;&lt; "Max load factor: " &lt;&lt; uset.max_load_factor() &lt;&lt; std::endl;
+std::cout &lt;&lt; "Bucket count: " &lt;&lt; uset.bucket_count() &lt;&lt; std::endl;</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="constructors" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                    <pre><code class="language-cpp">unordered_set();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty unordered_set with default bucket count.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; uset1; // Empty set</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(2) Bucket Count Constructor</h5>
+                    <pre><code class="language-cpp">explicit unordered_set( size_type bucket_count );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty unordered_set with specified initial bucket count.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; uset2(100); // Start with 100 buckets</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(3) Range Constructor</h5>
+                    <pre><code class="language-cpp">template&lt; class InputIt &gt;
+unordered_set( InputIt first, InputIt last );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an unordered_set from a range of elements.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec = {1, 2, 3, 4, 5, 3, 2}; // Note duplicates
+std::unordered_set&lt;int&gt; uset3(vec.begin(), vec.end()); // {1, 2, 3, 4, 5}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(4) Initializer List Constructor</h5>
+                    <pre><code class="language-cpp">unordered_set( std::initializer_list&lt;T&gt; init );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an unordered_set from an initializer list. (Since C++11)</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; uset4 = {1, 2, 3, 4, 5}; // {1, 2, 3, 4, 5}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(5) Custom Hash and Equality</h5>
+                    <pre><code class="language-cpp">template&lt; class T, class Hash = std::hash&lt;T&gt;, class KeyEqual = std::equal_to&lt;T&gt; &gt;
+class unordered_set;</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Can specify custom hash function and equality comparator.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Custom hash for case-insensitive strings
+struct CaseInsensitiveHash {
+    std::size_t operator()(const std::string& str) const {
+        std::string lower_str = str;
+        std::transform(lower_str.begin(), lower_str.end(), lower_str.begin(), ::tolower);
+        return std::hash&lt;std::string&gt;{}(lower_str);
+    }
+};
+
+struct CaseInsensitiveEqual {
+    bool operator()(const std::string& lhs, const std::string& rhs) const {
+        return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
+                         [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+    }
+};
+
+std::unordered_set&lt;std::string, CaseInsensitiveHash, CaseInsensitiveEqual&gt; uset5;
+uset5.insert("Hello");
+uset5.insert("HELLO"); // Won't be inserted (considered equal to "Hello")</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="basic-operations" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Basic Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">insert(), emplace()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Add elements to the set. Returns a pair with iterator and bool indicating if insertion took place.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; uset;
+
+// Insert single element
+auto result1 = uset.insert(42);
+std::cout &lt;&lt; "Inserted: " &lt;&lt; result1.second &lt;&lt; std::endl; // true
+
+// Try to insert duplicate
+auto result2 = uset.insert(42);
+std::cout &lt;&lt; "Inserted: " &lt;&lt; result2.second &lt;&lt; std::endl; // false
+
+// Insert multiple elements
+uset.insert({1, 2, 3, 4, 5});
+
+// Emplace (construct in-place)
+uset.emplace(100); // More efficient for complex objects</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">find(), count(), contains()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Search for elements in the set.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; uset = {1, 2, 3, 4, 5};
+
+// Find element
+auto it = uset.find(3);
+if (it != uset.end()) {
+    std::cout &lt;&lt; "Found: " &lt;&lt; *it &lt;&lt; std::endl;
+}
+
+// Count occurrences (always 0 or 1 for unordered_set)
+if (uset.count(4) > 0) {
+    std::cout &lt;&lt; "4 is in the set" &lt;&lt; std::endl;
+}
+
+// C++20: contains() - more readable
+if (uset.contains(5)) {
+    std::cout &lt;&lt; "5 is in the set" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">erase()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Remove elements from the set.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; uset = {1, 2, 3, 4, 5};
+
+// Erase by value
+size_t erased = uset.erase(3); // Returns number of elements removed (0 or 1)
+std::cout &lt;&lt; "Erased " &lt;&lt; erased &lt;&lt; " elements" &lt;&lt; std::endl;
+
+// Erase by iterator
+auto it = uset.find(4);
+if (it != uset.end()) {
+    uset.erase(it);
+}
+
+// Erase range
+auto it1 = uset.begin();
+auto it2 = std::next(it1, 2);
+uset.erase(it1, it2); // Erase first 2 elements</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">clear(), size(), empty()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Container management operations.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; uset = {1, 2, 3, 4, 5};
+
+std::cout &lt;&lt; "Size: " &lt;&lt; uset.size() &lt;&lt; std::endl;     // 5
+std::cout &lt;&lt; "Empty: " &lt;&lt; uset.empty() &lt;&lt; std::endl;   // false
+
+uset.clear(); // Remove all elements
+
+std::cout &lt;&lt; "Size: " &lt;&lt; uset.size() &lt;&lt; std::endl;     // 0
+std::cout &lt;&lt; "Empty: " &lt;&lt; uset.empty() &lt;&lt; std::endl;   // true</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="bucket-interface" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Bucket Interface</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Bucket Information</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Query and manage the underlying hash table structure.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; uset = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+std::cout &lt;&lt; "Bucket count: " &lt;&lt; uset.bucket_count() &lt;&lt; std::endl;
+std::cout &lt;&lt; "Load factor: " &lt;&lt; uset.load_factor() &lt;&lt; std::endl;
+std::cout &lt;&lt; "Max load factor: " &lt;&lt; uset.max_load_factor() &lt;&lt; std::endl;
+
+// Find which bucket an element is in
+int element = 5;
+size_t bucket = uset.bucket(element);
+std::cout &lt;&lt; element &lt;&lt; " is in bucket " &lt;&lt; bucket &lt;&lt; std::endl;
+
+// Count elements in a specific bucket
+std::cout &lt;&lt; "Bucket " &lt;&lt; bucket &lt;&lt; " has " &lt;&lt; uset.bucket_size(bucket) &lt;&lt; " elements" &lt;&lt; std::endl;</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Hash Policy Management</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Control rehashing behavior and performance.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::unordered_set&lt;int&gt; uset;
+
+// Reserve space for expected number of elements
+uset.reserve(1000); // Ensures at least 1000/max_load_factor buckets
+
+// Set max load factor
+uset.max_load_factor(0.75); // Rehash when load factor exceeds 0.75
+
+// Force rehash with specific bucket count
+uset.rehash(100); // At least 100 buckets
+
+// Add elements and observe rehashing
+for (int i = 0; i < 100; ++i) {
+    uset.insert(i);
+    // Container may automatically rehash during insertion
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="custom-hash-functions" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Custom Hash Functions</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">For User-Defined Types</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Define custom hash functions for your own classes.</p>
+                    <pre class="ml-4"><code class="language-cpp">struct Point {
+    int x, y;
+
+    bool operator==(const Point& other) const {
+        return x == other.x && y == other.y;
+    }
+};
+
+// Method 1: Specialize std::hash
+namespace std {
+    template&lt;&gt;
+    struct hash&lt;Point&gt; {
+        std::size_t operator()(const Point& p) const {
+            // Combine hash values of x and y
+            return std::hash&lt;int&gt;{}(p.x) ^ (std::hash&lt;int&gt;{}(p.y) &lt;&lt; 1);
+        }
+    };
+}
+
+// Method 2: Custom hash function object
+struct PointHash {
+    std::size_t operator()(const Point& p) const {
+        return std::hash&lt;int&gt;{}(p.x) ^ (std::hash&lt;int&gt;{}(p.y) &lt;&lt; 1);
+    }
+};
+
+// Usage
+std::unordered_set&lt;Point&gt; points1; // Uses std::hash&lt;Point&gt;
+std::unordered_set&lt;Point, PointHash&gt; points2; // Uses PointHash</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Advanced Hash Combining</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Better hash combining techniques for complex types.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Helper function for combining hash values
+template&lt;typename T&gt;
+void hash_combine(std::size_t& seed, const T& value) {
+    std::hash&lt;T&gt; hasher;
+    seed ^= hasher(value) + 0x9e3779b9 + (seed &lt;&lt; 6) + (seed &gt;&gt; 2);
+}
+
+struct Person {
+    std::string name;
+    int age;
+    double salary;
+
+    bool operator==(const Person& other) const {
+        return name == other.name && age == other.age && salary == other.salary;
+    }
+};
+
+struct PersonHash {
+    std::size_t operator()(const Person& p) const {
+        std::size_t seed = 0;
+        hash_combine(seed, p.name);
+        hash_combine(seed, p.age);
+        hash_combine(seed, p.salary);
+        return seed;
+    }
+};
+
+std::unordered_set&lt;Person, PersonHash&gt; employees;</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="performance-comparison" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Performance Comparison: unordered_set vs set</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">When to Use unordered_set</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Choose unordered_set when:</p>
+                    <ul class="text-gray-400 ml-8 list-disc space-y-1">
+                        <li>You need fast O(1) average lookup, insertion, and deletion</li>
+                        <li>You don't need sorted/ordered elements</li>
+                        <li>You have a good hash function available</li>
+                        <li>Memory usage is not extremely constrained</li>
+                    </ul>
+                    <pre class="ml-4"><code class="language-cpp">// Fast membership testing
+std::unordered_set&lt;int&gt; valid_ids = {100, 200, 300, 400, 500};
+
+bool is_valid(int id) {
+    return valid_ids.contains(id); // O(1) average case
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">When to Use set</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Choose set when:</p>
+                    <ul class="text-gray-400 ml-8 list-disc space-y-1">
+                        <li>You need guaranteed O(log n) performance</li>
+                        <li>You need sorted/ordered elements</li>
+                        <li>You need range operations (lower_bound, upper_bound)</li>
+                        <li>Memory usage is critical (more compact)</li>
+                    </ul>
+                    <pre class="ml-4"><code class="language-cpp">// When you need ordered iteration
+std::set&lt;int&gt; sorted_numbers = {5, 1, 3, 2, 4};
+for (int num : sorted_numbers) {
+    std::cout &lt;&lt; num &lt;&lt; " "; // Prints: 1 2 3 4 5
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Performance Characteristics</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Detailed comparison of time complexities:</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm text-gray-400">
+                            <thead>
+                                <tr class="border-b border-gray-600">
+                                    <th class="text-left py-2">Operation</th>
+                                    <th class="text-left py-2">unordered_set</th>
+                                    <th class="text-left py-2">set</th>
+                                </tr>
+                            </thead>
+                            <tbody class="space-y-2">
+                                <tr class="border-b border-gray-700">
+                                    <td class="py-2">Insert</td>
+                                    <td class="py-2 text-green-300">O(1) avg, O(n) worst</td>
+                                    <td class="py-2 text-yellow-300">O(log n)</td>
+                                </tr>
+                                <tr class="border-b border-gray-700">
+                                    <td class="py-2">Find</td>
+                                    <td class="py-2 text-green-300">O(1) avg, O(n) worst</td>
+                                    <td class="py-2 text-yellow-300">O(log n)</td>
+                                </tr>
+                                <tr class="border-b border-gray-700">
+                                    <td class="py-2">Delete</td>
+                                    <td class="py-2 text-green-300">O(1) avg, O(n) worst</td>
+                                    <td class="py-2 text-yellow-300">O(log n)</td>
+                                </tr>
+                                <tr class="border-b border-gray-700">
+                                    <td class="py-2">Iteration</td>
+                                    <td class="py-2 text-yellow-300">O(n), unordered</td>
+                                    <td class="py-2 text-green-300">O(n), sorted</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2">Memory</td>
+                                    <td class="py-2 text-red-300">Higher overhead</td>
+                                    <td class="py-2 text-green-300">Lower overhead</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 id="common-patterns" class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">Common std::unordered_set Patterns</h3>
+    <div class="space-y-4">
+        <details>
+            <summary class="font-semibold text-lg">1. Fast Membership Testing</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Use unordered_set for O(1) membership checks in large datasets.</p>
+                <pre><code class="language-cpp">class WordFilter {
+private:
+    std::unordered_set&lt;std::string&gt; banned_words;
+
+public:
+    WordFilter(const std::vector&lt;std::string&gt;& banned)
+        : banned_words(banned.begin(), banned.end()) {}
+
+    bool is_allowed(const std::string& word) const {
+        return !banned_words.contains(word); // O(1) average case
+    }
+};
+
+// Usage
+WordFilter filter({"spam", "virus", "malware"});
+std::cout &lt;&lt; filter.is_allowed("hello") &lt;&lt; std::endl; // true
+std::cout &lt;&lt; filter.is_allowed("spam") &lt;&lt; std::endl;  // false</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">2. Deduplication</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Remove duplicates from a sequence efficiently.</p>
+                <pre><code class="language-cpp">std::vector&lt;int&gt; remove_duplicates(const std::vector&lt;int&gt;& input) {
+    std::unordered_set&lt;int&gt; seen;
+    std::vector&lt;int&gt; result;
+
+    for (int value : input) {
+        if (seen.insert(value).second) { // insert() returns pair&lt;iterator, bool&gt;
+            result.push_back(value);      // Only add if insertion was successful
+        }
+    }
+
+    return result;
+}
+
+// Usage
+std::vector&lt;int&gt; nums = {1, 2, 2, 3, 1, 4, 3, 5};
+std::vector&lt;int&gt; unique = remove_duplicates(nums); // {1, 2, 3, 4, 5}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">3. Set Operations</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Implement mathematical set operations like intersection and union.</p>
+                <pre><code class="language-cpp">template&lt;typename T&gt;
+std::unordered_set&lt;T&gt; set_intersection(const std::unordered_set&lt;T&gt;& set1,
+                                       const std::unordered_set&lt;T&gt;& set2) {
+    std::unordered_set&lt;T&gt; result;
+
+    // Iterate through smaller set for efficiency
+    const auto& smaller = (set1.size() &lt; set2.size()) ? set1 : set2;
+    const auto& larger = (set1.size() &lt; set2.size()) ? set2 : set1;
+
+    for (const auto& element : smaller) {
+        if (larger.contains(element)) {
+            result.insert(element);
+        }
+    }
+
+    return result;
+}
+
+template&lt;typename T&gt;
+std::unordered_set&lt;T&gt; set_union(const std::unordered_set&lt;T&gt;& set1,
+                                const std::unordered_set&lt;T&gt;& set2) {
+    std::unordered_set&lt;T&gt; result = set1; // Copy first set
+    result.insert(set2.begin(), set2.end()); // Add all elements from second set
+    return result;
+}
+
+// Usage
+std::unordered_set&lt;int&gt; set_a = {1, 2, 3, 4};
+std::unordered_set&lt;int&gt; set_b = {3, 4, 5, 6};
+
+auto intersection = set_intersection(set_a, set_b); // {3, 4}
+auto union_set = set_union(set_a, set_b);           // {1, 2, 3, 4, 5, 6}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">4. Caching/Memoization</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Use unordered_set to cache computed results and avoid recomputation.</p>
+                <pre><code class="language-cpp">class PrimeChecker {
+private:
+    mutable std::unordered_set&lt;int&gt; known_primes;
+    mutable std::unordered_set&lt;int&gt; known_composites;
+
+    bool is_prime_slow(int n) const {
+        if (n &lt; 2) return false;
+        for (int i = 2; i * i &lt;= n; ++i) {
+            if (n % i == 0) return false;
+        }
+        return true;
+    }
+
+public:
+    bool is_prime(int n) const {
+        // Check cache first
+        if (known_primes.contains(n)) return true;
+        if (known_composites.contains(n)) return false;
+
+        // Compute and cache result
+        bool prime = is_prime_slow(n);
+        if (prime) {
+            known_primes.insert(n);
+        } else {
+            known_composites.insert(n);
+        }
+
+        return prime;
+    }
+};
+
+PrimeChecker checker;
+std::cout &lt;&lt; checker.is_prime(17) &lt;&lt; std::endl; // Computed and cached
+std::cout &lt;&lt; checker.is_prime(17) &lt;&lt; std::endl; // Retrieved from cache</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">5. Two Sum Problem Pattern</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Common interview problem: find if any two numbers sum to a target.</p>
+                <pre><code class="language-cpp">bool has_two_sum(const std::vector&lt;int&gt;& nums, int target) {
+    std::unordered_set&lt;int&gt; seen;
+
+    for (int num : nums) {
+        int complement = target - num;
+        if (seen.contains(complement)) {
+            return true;
+        }
+        seen.insert(num);
+    }
+
+    return false;
+}
+
+// Find actual pair that sums to target
+std::pair&lt;int, int&gt; find_two_sum(const std::vector&lt;int&gt;& nums, int target) {
+    std::unordered_set&lt;int&gt; seen;
+
+    for (int num : nums) {
+        int complement = target - num;
+        if (seen.contains(complement)) {
+            return {complement, num};
+        }
+        seen.insert(num);
+    }
+
+    return {-1, -1}; // Not found
+}
+
+// Usage
+std::vector&lt;int&gt; numbers = {2, 7, 11, 15};
+bool exists = has_two_sum(numbers, 9);           // true (2 + 7 = 9)
+auto pair = find_two_sum(numbers, 9);            // {2, 7}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">6. Performance Optimization Tips</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Best practices for optimal unordered_set performance.</p>
+                <pre><code class="language-cpp">// 1. Reserve space if you know the approximate size
+std::unordered_set&lt;int&gt; uset;
+uset.reserve(1000); // Avoids multiple rehashes
+
+// 2. Use emplace() instead of insert() for complex objects
+struct ComplexObject {
+    std::string data;
+    ComplexObject(const std::string& s) : data(s) {}
+};
+
+std::unordered_set&lt;ComplexObject&gt; objects;
+objects.emplace("hello");        // Constructs in-place
+// objects.insert(ComplexObject("hello")); // Creates temporary object
+
+// 3. Monitor load factor for performance
+void monitor_performance(const std::unordered_set&lt;int&gt;& uset) {
+    std::cout &lt;&lt; "Load factor: " &lt;&lt; uset.load_factor() &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Bucket count: " &lt;&lt; uset.bucket_count() &lt;&lt; std::endl;
+
+    if (uset.load_factor() > 0.75) {
+        std::cout &lt;&lt; "Consider rehashing for better performance" &lt;&lt; std::endl;
+    }
+}
+
+// 4. Use contains() (C++20) instead of find() for membership testing
+bool is_member_efficient(const std::unordered_set&lt;int&gt;& uset, int value) {
+    return uset.contains(value); // More readable and potentially optimized
+}
+
+bool is_member_legacy(const std::unordered_set&lt;int&gt;& uset, int value) {
+    return uset.find(value) != uset.end(); // Pre-C++20 approach
+}</code></pre>
+            </div>
+        </details>
+    </div>
+</div>

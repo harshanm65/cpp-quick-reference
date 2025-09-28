@@ -1,0 +1,571 @@
+<div id="queue-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::queue In-Depth</h2>
+    <p class="mb-4 text-gray-400">A container adapter that provides FIFO (First In, First Out) access to elements. It's built on top of an underlying container and restricts access to only the front and back. Header: #include &lt;queue&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Characteristics:</strong> O(1) push/pop operations, O(1) front/back access. The underlying container determines the actual performance characteristics.</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">FIFO Principles</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">First In, First Out (FIFO)</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Elements are added to the back and removed from the front, like a line of people waiting.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::queue&lt;int&gt; q;
+
+q.push(1);  // Queue: [1]
+q.push(2);  // Queue: [1, 2] (1 is front, 2 is back)
+q.push(3);  // Queue: [1, 2, 3]
+
+int first = q.front(); // 1 (first element added)
+q.pop();               // Queue: [2, 3]
+
+int next = q.front();  // 2 (next element in line)
+q.pop();               // Queue: [3]</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Visualization of FIFO Operations</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Understanding the flow of elements through a queue.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Queue operations visualization
+//
+// push(A) → [A]           (front) A (back)
+// push(B) → [A, B]        (front) A, B (back)
+// push(C) → [A, B, C]     (front) A, B, C (back)
+// pop()   → [B, C]        (front) B, C (back)    // A was removed
+// pop()   → [C]           (front) C (back)       // B was removed</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Basic Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">push()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Adds an element to the back of the queue.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::queue&lt;std::string&gt; q;
+
+q.push("First");   // Queue: ["First"]
+q.push("Second");  // Queue: ["First", "Second"]
+q.push("Third");   // Queue: ["First", "Second", "Third"]
+
+std::cout &lt;&lt; "Queue size: " &lt;&lt; q.size() &lt;&lt; std::endl; // 3</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">pop()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Removes the front element from the queue. Does not return the removed element.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::queue&lt;int&gt; q;
+q.push(10);
+q.push(20);
+q.push(30);
+
+// Always check front() before pop() if you need the value
+int frontValue = q.front(); // 10
+q.pop();                    // Queue: [20, 30]
+
+// Common pattern: process and remove
+while (!q.empty()) {
+    int current = q.front();
+    std::cout &lt;&lt; current &lt;&lt; " ";
+    q.pop();
+}
+// Output: 20 30</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">front(), back()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Access the front and back elements without removing them.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::queue&lt;char&gt; q;
+q.push('A');
+q.push('B');
+q.push('C');
+
+char front_elem = q.front(); // 'A' (next to be removed)
+char back_elem = q.back();   // 'C' (most recently added)
+
+// Modify elements in place
+q.front() = 'X'; // Queue: ['X', 'B', 'C']
+q.back() = 'Z';  // Queue: ['X', 'B', 'Z']</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">size(), empty()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Query the size and check if the queue is empty.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::queue&lt;int&gt; q;
+
+std::cout &lt;&lt; "Empty: " &lt;&lt; q.empty() &lt;&lt; std::endl;  // true
+std::cout &lt;&lt; "Size: " &lt;&lt; q.size() &lt;&lt; std::endl;    // 0
+
+q.push(42);
+q.push(84);
+
+std::cout &lt;&lt; "Empty: " &lt;&lt; q.empty() &lt;&lt; std::endl;  // false
+std::cout &lt;&lt; "Size: " &lt;&lt; q.size() &lt;&lt; std::endl;    // 2</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Underlying Container Adapters</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Default Container (std::deque)</h5>
+                    <p class="text-gray-400 mt-2 mb-3">By default, std::queue uses std::deque as the underlying container.</p>
+                    <pre class="ml-4"><code class="language-cpp">// These are equivalent
+std::queue&lt;int&gt; q1;
+std::queue&lt;int, std::deque&lt;int&gt;&gt; q2;
+
+// std::deque provides:
+// - O(1) push_back and pop_front
+// - Good performance for queue operations
+// - No iterator invalidation on push/pop</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Alternative Containers</h5>
+                    <p class="text-gray-400 mt-2 mb-3">You can specify different underlying containers.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Using std::list (good for large objects)
+std::queue&lt;std::string, std::list&lt;std::string&gt;&gt; q_list;
+
+// Using std::vector (not ideal due to pop_front being O(n))
+// But sometimes used when memory layout matters
+std::queue&lt;int, std::vector&lt;int&gt;&gt; q_vector;
+
+// The container must support:
+// - push_back()
+// - pop_front()
+// - front()
+// - back()
+// - size()
+// - empty()</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Custom Container Example</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Creating a queue with specific container requirements.</p>
+                    <pre class="ml-4"><code class="language-cpp">// For scenarios requiring specific memory behavior
+template&lt;typename T&gt;
+class FixedQueue {
+    std::array&lt;T, 1000&gt; data;
+    size_t front_idx = 0;
+    size_t size_val = 0;
+
+public:
+    void push(const T&amp; item) {
+        if (size_val &lt; 1000) {
+            data[(front_idx + size_val) % 1000] = item;
+            ++size_val;
+        }
+    }
+
+    void pop() {
+        if (size_val > 0) {
+            front_idx = (front_idx + 1) % 1000;
+            --size_val;
+        }
+    }
+
+    T&amp; front() { return data[front_idx]; }
+    size_t size() const { return size_val; }
+    bool empty() const { return size_val == 0; }
+};</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">BFS Algorithms</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Graph BFS Traversal</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Breadth-First Search using a queue to explore nodes level by level.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;queue&gt;
+#include &lt;vector&gt;
+#include &lt;unordered_set&gt;
+
+void bfs(const std::vector&lt;std::vector&lt;int&gt;&gt;&amp; graph, int start) {
+    std::queue&lt;int&gt; q;
+    std::unordered_set&lt;int&gt; visited;
+
+    q.push(start);
+    visited.insert(start);
+
+    while (!q.empty()) {
+        int current = q.front();
+        q.pop();
+
+        std::cout &lt;&lt; current &lt;&lt; " ";
+
+        // Add all unvisited neighbors to queue
+        for (int neighbor : graph[current]) {
+            if (visited.find(neighbor) == visited.end()) {
+                q.push(neighbor);
+                visited.insert(neighbor);
+            }
+        }
+    }
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Shortest Path in Unweighted Graph</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Finding shortest path using BFS properties.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; shortestPath(const std::vector&lt;std::vector&lt;int&gt;&gt;&amp; graph,
+                              int start, int target) {
+    std::queue&lt;int&gt; q;
+    std::vector&lt;int&gt; parent(graph.size(), -1);
+    std::vector&lt;bool&gt; visited(graph.size(), false);
+
+    q.push(start);
+    visited[start] = true;
+
+    while (!q.empty()) {
+        int current = q.front();
+        q.pop();
+
+        if (current == target) {
+            // Reconstruct path
+            std::vector&lt;int&gt; path;
+            for (int v = target; v != -1; v = parent[v]) {
+                path.push_back(v);
+            }
+            std::reverse(path.begin(), path.end());
+            return path;
+        }
+
+        for (int neighbor : graph[current]) {
+            if (!visited[neighbor]) {
+                q.push(neighbor);
+                visited[neighbor] = true;
+                parent[neighbor] = current;
+            }
+        }
+    }
+
+    return {}; // No path found
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Multi-Source BFS</h5>
+                    <p class="text-gray-400 mt-2 mb-3">BFS starting from multiple sources simultaneously.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Example: Find distance to nearest source from each cell
+std::vector&lt;std::vector&lt;int&gt;&gt; multiSourceBFS(
+    std::vector&lt;std::vector&lt;int&gt;&gt;&amp; grid,
+    std::vector&lt;std::pair&lt;int, int&gt;&gt;&amp; sources) {
+
+    int rows = grid.size(), cols = grid[0].size();
+    std::vector&lt;std::vector&lt;int&gt;&gt; distances(rows, std::vector&lt;int&gt;(cols, -1));
+    std::queue&lt;std::pair&lt;int, int&gt;&gt; q;
+
+    // Add all sources to queue with distance 0
+    for (auto&amp; source : sources) {
+        q.push(source);
+        distances[source.first][source.second] = 0;
+    }
+
+    int dx[] = {-1, 1, 0, 0};
+    int dy[] = {0, 0, -1, 1};
+
+    while (!q.empty()) {
+        auto [x, y] = q.front();
+        q.pop();
+
+        for (int i = 0; i &lt; 4; i++) {
+            int nx = x + dx[i];
+            int ny = y + dy[i];
+
+            if (nx &gt;= 0 &amp;&amp; nx &lt; rows &amp;&amp; ny &gt;= 0 &amp;&amp; ny &lt; cols
+                &amp;&amp; distances[nx][ny] == -1 &amp;&amp; grid[nx][ny] == 0) {
+                distances[nx][ny] = distances[x][y] + 1;
+                q.push({nx, ny});
+            }
+        }
+    }
+
+    return distances;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Level-Order Traversal</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Binary Tree Level-Order Traversal</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Process tree nodes level by level using a queue.</p>
+                    <pre class="ml-4"><code class="language-cpp">struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+};
+
+std::vector&lt;std::vector&lt;int&gt;&gt; levelOrder(TreeNode* root) {
+    if (!root) return {};
+
+    std::vector&lt;std::vector&lt;int&gt;&gt; result;
+    std::queue&lt;TreeNode*&gt; q;
+    q.push(root);
+
+    while (!q.empty()) {
+        int levelSize = q.size();
+        std::vector&lt;int&gt; currentLevel;
+
+        // Process all nodes at current level
+        for (int i = 0; i &lt; levelSize; i++) {
+            TreeNode* node = q.front();
+            q.pop();
+
+            currentLevel.push_back(node-&gt;val);
+
+            if (node-&gt;left) q.push(node-&gt;left);
+            if (node-&gt;right) q.push(node-&gt;right);
+        }
+
+        result.push_back(currentLevel);
+    }
+
+    return result;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Zigzag Level-Order Traversal</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Alternating left-to-right and right-to-left traversal.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;std::vector&lt;int&gt;&gt; zigzagLevelOrder(TreeNode* root) {
+    if (!root) return {};
+
+    std::vector&lt;std::vector&lt;int&gt;&gt; result;
+    std::queue&lt;TreeNode*&gt; q;
+    q.push(root);
+    bool leftToRight = true;
+
+    while (!q.empty()) {
+        int levelSize = q.size();
+        std::vector&lt;int&gt; currentLevel(levelSize);
+
+        for (int i = 0; i &lt; levelSize; i++) {
+            TreeNode* node = q.front();
+            q.pop();
+
+            // Choose index based on direction
+            int index = leftToRight ? i : levelSize - 1 - i;
+            currentLevel[index] = node-&gt;val;
+
+            if (node-&gt;left) q.push(node-&gt;left);
+            if (node-&gt;right) q.push(node-&gt;right);
+        }
+
+        leftToRight = !leftToRight;
+        result.push_back(currentLevel);
+    }
+
+    return result;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Find Rightmost Node at Each Level</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Using level-order traversal to find rightmost nodes.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; rightSideView(TreeNode* root) {
+    if (!root) return {};
+
+    std::vector&lt;int&gt; result;
+    std::queue&lt;TreeNode*&gt; q;
+    q.push(root);
+
+    while (!q.empty()) {
+        int levelSize = q.size();
+
+        for (int i = 0; i &lt; levelSize; i++) {
+            TreeNode* node = q.front();
+            q.pop();
+
+            // If this is the last node in the level
+            if (i == levelSize - 1) {
+                result.push_back(node-&gt;val);
+            }
+
+            if (node-&gt;left) q.push(node-&gt;left);
+            if (node-&gt;right) q.push(node-&gt;right);
+        }
+    }
+
+    return result;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">Common std::queue Patterns</h3>
+    <div class="space-y-4">
+        <details>
+            <summary class="font-semibold text-lg">1. Producer-Consumer Pattern</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Using queue to coordinate between producers and consumers.</p>
+                <pre><code class="language-cpp">class TaskQueue {
+    std::queue&lt;std::function&lt;void()&gt;&gt; tasks;
+    std::mutex mtx;
+    std::condition_variable cv;
+    bool stop = false;
+
+public:
+    void addTask(std::function&lt;void()&gt; task) {
+        std::lock_guard&lt;std::mutex&gt; lock(mtx);
+        tasks.push(task);
+        cv.notify_one();
+    }
+
+    void worker() {
+        while (true) {
+            std::unique_lock&lt;std::mutex&gt; lock(mtx);
+            cv.wait(lock, [this] { return !tasks.empty() || stop; });
+
+            if (stop && tasks.empty()) break;
+
+            auto task = tasks.front();
+            tasks.pop();
+            lock.unlock();
+
+            task(); // Execute task
+        }
+    }
+
+    void shutdown() {
+        std::lock_guard&lt;std::mutex&gt; lock(mtx);
+        stop = true;
+        cv.notify_all();
+    }
+};</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">2. Sliding Window Maximum</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Using deque (which can act as queue) for sliding window problems.</p>
+                <pre><code class="language-cpp">std::vector&lt;int&gt; maxSlidingWindow(std::vector&lt;int&gt;&amp; nums, int k) {
+    std::deque&lt;int&gt; dq; // Store indices
+    std::vector&lt;int&gt; result;
+
+    for (int i = 0; i &lt; nums.size(); i++) {
+        // Remove indices that are out of current window
+        while (!dq.empty() && dq.front() &lt;= i - k) {
+            dq.pop_front();
+        }
+
+        // Remove indices with smaller values (they can't be maximum)
+        while (!dq.empty() && nums[dq.back()] &lt;= nums[i]) {
+            dq.pop_back();
+        }
+
+        dq.push_back(i);
+
+        // Add maximum to result if window is complete
+        if (i &gt;= k - 1) {
+            result.push_back(nums[dq.front()]);
+        }
+    }
+
+    return result;
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">3. Flood Fill Algorithm</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Using BFS with queue for flood fill operations.</p>
+                <pre><code class="language-cpp">void floodFill(std::vector&lt;std::vector&lt;int&gt;&gt;&amp; image,
+               int sr, int sc, int newColor) {
+    int originalColor = image[sr][sc];
+    if (originalColor == newColor) return;
+
+    std::queue&lt;std::pair&lt;int, int&gt;&gt; q;
+    q.push({sr, sc});
+
+    int dx[] = {-1, 1, 0, 0};
+    int dy[] = {0, 0, -1, 1};
+
+    while (!q.empty()) {
+        auto [x, y] = q.front();
+        q.pop();
+
+        image[x][y] = newColor;
+
+        for (int i = 0; i &lt; 4; i++) {
+            int nx = x + dx[i];
+            int ny = y + dy[i];
+
+            if (nx &gt;= 0 && nx &lt; image.size() &&
+                ny &gt;= 0 && ny &lt; image[0].size() &&
+                image[nx][ny] == originalColor) {
+                q.push({nx, ny});
+            }
+        }
+    }
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">4. Rotting Oranges Problem</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Multi-source BFS to simulate simultaneous spreading.</p>
+                <pre><code class="language-cpp">int orangesRotting(std::vector&lt;std::vector&lt;int&gt;&gt;&amp; grid) {
+    int rows = grid.size(), cols = grid[0].size();
+    std::queue&lt;std::pair&lt;int, int&gt;&gt; q;
+    int freshCount = 0;
+
+    // Add all initially rotten oranges to queue
+    for (int i = 0; i &lt; rows; i++) {
+        for (int j = 0; j &lt; cols; j++) {
+            if (grid[i][j] == 2) {
+                q.push({i, j});
+            } else if (grid[i][j] == 1) {
+                freshCount++;
+            }
+        }
+    }
+
+    if (freshCount == 0) return 0;
+
+    int minutes = 0;
+    int dx[] = {-1, 1, 0, 0};
+    int dy[] = {0, 0, -1, 1};
+
+    while (!q.empty()) {
+        int size = q.size();
+        bool hasNewRotten = false;
+
+        for (int i = 0; i &lt; size; i++) {
+            auto [x, y] = q.front();
+            q.pop();
+
+            for (int j = 0; j &lt; 4; j++) {
+                int nx = x + dx[j];
+                int ny = y + dy[j];
+
+                if (nx &gt;= 0 && nx &lt; rows && ny &gt;= 0 && ny &lt; cols &&
+                    grid[nx][ny] == 1) {
+                    grid[nx][ny] = 2;
+                    q.push({nx, ny});
+                    freshCount--;
+                    hasNewRotten = true;
+                }
+            }
+        }
+
+        if (hasNewRotten) minutes++;
+    }
+
+    return freshCount == 0 ? minutes : -1;
+}</code></pre>
+            </div>
+        </details>
+    </div>
+</div>

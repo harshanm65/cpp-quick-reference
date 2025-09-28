@@ -1,0 +1,255 @@
+<div id="vector-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::vector In-Depth</h2>
+    <p class="mb-4 text-gray-400">A dynamic array that can grow and shrink during runtime. It provides fast random access to elements and efficient insertion/deletion at the end. Header: #include &lt;vector&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Characteristics:</strong> O(1) random access, O(1) amortized insertion at end, O(n) insertion/deletion in middle, automatic memory management with geometric growth.</p>
+
+    <div class="toc-container bg-gray-700 rounded-lg p-4 mb-6">
+        <h4 class="text-lg font-semibold text-cyan-300 mb-3">📋 Table of Contents</h4>
+        <ul class="space-y-2 text-sm">
+            <li><a href="#constructors" class="text-cyan-400 hover:text-cyan-200 transition-colors">Constructors</a></li>
+            <li><a href="#element-access" class="text-cyan-400 hover:text-cyan-200 transition-colors">Element Access</a></li>
+            <li><a href="#modifiers" class="text-cyan-400 hover:text-cyan-200 transition-colors">Modifiers</a></li>
+            <li><a href="#capacity" class="text-cyan-400 hover:text-cyan-200 transition-colors">Capacity</a></li>
+            <li><a href="#common-patterns" class="text-cyan-400 hover:text-cyan-200 transition-colors">Common Patterns</a></li>
+        </ul>
+    </div>
+
+    <div class="space-y-12">
+        <div>
+            <h3 id="constructors" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                    <pre><code class="language-cpp">vector();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty vector.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; v1; // Empty vector</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(2) Fill Constructor</h5>
+                    <pre><code class="language-cpp">vector( size_type count, const T&amp; value );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a vector with `count` copies of `value`.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; v2(5, 42); // {42, 42, 42, 42, 42}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(3) Range Constructor</h5>
+                    <pre><code class="language-cpp">template&lt; class InputIt &gt;
+vector( InputIt first, InputIt last );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a vector from a range of elements.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; source = {1, 2, 3, 4, 5};
+std::vector&lt;int&gt; v3(source.begin() + 1, source.begin() + 4); // {2, 3, 4}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(4) Initializer List Constructor</h5>
+                    <pre><code class="language-cpp">vector( std::initializer_list&lt;T&gt; init );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a vector from an initializer list. (Since C++11)</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; v4 = {1, 2, 3, 4, 5}; // {1, 2, 3, 4, 5}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="element-access" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Element Access</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">operator[], at()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">`operator[]` provides unchecked access, while `at()` provides bounds-checked access.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec = {10, 20, 30, 40, 50};
+
+int val1 = vec[2];    // 30 (no bounds checking)
+int val2 = vec.at(2); // 30 (throws std::out_of_range if index invalid)
+
+// vec[10]; // Undefined behavior
+// vec.at(10); // Throws std::out_of_range</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">front(), back()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Access the first and last elements.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec = {10, 20, 30, 40, 50};
+
+int first = vec.front(); // 10
+int last = vec.back();   // 50
+
+// Modifying through references
+vec.front() = 100; // vec is now {100, 20, 30, 40, 50}
+vec.back() = 500;  // vec is now {100, 20, 30, 40, 500}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">data()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Returns a pointer to the underlying array.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec = {1, 2, 3, 4, 5};
+int* ptr = vec.data();
+
+// Can be used with C APIs that expect arrays
+// some_c_function(vec.data(), vec.size());</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="modifiers" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Modifiers</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">push_back(), emplace_back()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">`push_back` copies/moves an element to the end. `emplace_back` constructs the element in-place.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;std::string&gt; vec;
+
+vec.push_back("Hello");           // Copy
+vec.push_back(std::string("World")); // Move
+
+// More efficient for complex objects
+vec.emplace_back("Constructed");  // Constructs std::string in-place
+vec.emplace_back(5, 'a');         // Constructs std::string("aaaaa") in-place</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">pop_back()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Removes the last element. Does not return the removed element.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec = {1, 2, 3, 4, 5};
+
+int last = vec.back(); // Get the last element first
+vec.pop_back();        // Remove it
+// vec is now {1, 2, 3, 4}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">insert(), emplace()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Insert elements at specified positions.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec = {1, 3, 5};
+
+// Insert single element
+vec.insert(vec.begin() + 1, 2); // {1, 2, 3, 5}
+
+// Insert multiple copies
+vec.insert(vec.end(), 3, 6); // {1, 2, 3, 5, 6, 6, 6}
+
+// Insert range
+std::vector&lt;int&gt; extra = {7, 8, 9};
+vec.insert(vec.end(), extra.begin(), extra.end()); // {1, 2, 3, 5, 6, 6, 6, 7, 8, 9}
+
+// Emplace (construct in-place)
+vec.emplace(vec.begin(), 0); // {0, 1, 2, 3, 5, 6, 6, 6, 7, 8, 9}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">erase()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Remove elements from specified positions or ranges.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+// Erase single element
+vec.erase(vec.begin() + 2); // Removes element at index 2 (value 3)
+// vec is now {1, 2, 4, 5, 6, 7, 8, 9}
+
+// Erase range
+vec.erase(vec.begin() + 2, vec.begin() + 5); // Removes elements from index 2 to 4
+// vec is now {1, 2, 7, 8, 9}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">clear(), resize(), reserve()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Capacity and size management operations.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec = {1, 2, 3, 4, 5};
+
+// Reserve capacity (doesn't change size)
+vec.reserve(100); // Ensures capacity of at least 100
+
+// Resize (changes size)
+vec.resize(3);     // vec is now {1, 2, 3}
+vec.resize(6, 42); // vec is now {1, 2, 3, 42, 42, 42}
+
+// Clear all elements
+vec.clear(); // vec is now empty, but capacity remains</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="capacity" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Capacity</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">size(), capacity(), empty()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Query the size and capacity of the vector.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec;
+vec.reserve(10);
+
+std::cout &lt;&lt; "Size: " &lt;&lt; vec.size() &lt;&lt; std::endl;         // 0
+std::cout &lt;&lt; "Capacity: " &lt;&lt; vec.capacity() &lt;&lt; std::endl; // At least 10
+std::cout &lt;&lt; "Empty: " &lt;&lt; vec.empty() &lt;&lt; std::endl;      // true
+
+vec.push_back(42);
+
+std::cout &lt;&lt; "Size: " &lt;&lt; vec.size() &lt;&lt; std::endl;         // 1
+std::cout &lt;&lt; "Empty: " &lt;&lt; vec.empty() &lt;&lt; std::endl;      // false</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">shrink_to_fit()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Requests to reduce capacity to match size. (Since C++11)</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; vec(1000, 42); // Size and capacity both 1000
+vec.resize(10);                 // Size is 10, capacity still ~1000
+
+vec.shrink_to_fit();           // Request to reduce capacity to 10
+// Note: This is a non-binding request</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 id="common-patterns" class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">Common std::vector Patterns</h3>
+    <div class="space-y-4">
+        <details>
+            <summary class="font-semibold text-lg">1. Efficient Vector Building</summary>
+            <div>
+                <p class="text-gray-400 mb-3">When you know the approximate size, reserve space to avoid reallocations.</p>
+                <pre><code class="language-cpp">std::vector&lt;int&gt; build_large_vector(int size) {
+    std::vector&lt;int&gt; result;
+    result.reserve(size); // Avoid multiple reallocations
+
+    for (int i = 0; i < size; ++i) {
+        result.push_back(i * i);
+    }
+    return result;
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">2. Erase-Remove Idiom</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Efficiently remove elements that satisfy a condition.</p>
+                <pre><code class="language-cpp">std::vector&lt;int&gt; vec = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+// Remove all even numbers
+vec.erase(
+    std::remove_if(vec.begin(), vec.end(), [](int x) { return x % 2 == 0; }),
+    vec.end()
+);
+// vec is now {1, 3, 5, 7, 9}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">3. Vector as a 2D Array</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Using vector of vectors for dynamic 2D arrays.</p>
+                <pre><code class="language-cpp">// Create a 2D vector (matrix)
+int rows = 3, cols = 4;
+std::vector&lt;std::vector&lt;int&gt;&gt; matrix(rows, std::vector&lt;int&gt;(cols, 0));
+
+// Access elements
+matrix[1][2] = 42;
+
+// More efficient: single vector with manual indexing
+std::vector&lt;int&gt; flat_matrix(rows * cols, 0);
+auto get_element = [&](int r, int c) -> int&amp; {
+    return flat_matrix[r * cols + c];
+};
+get_element(1, 2) = 42;</code></pre>
+            </div>
+        </details>
+    </div>
+</div>

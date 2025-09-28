@@ -1,0 +1,247 @@
+<div id="string-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::string In-Depth</h2>
+    <p class="mb-4 text-gray-400">A sequence of characters managed as a single object. It provides automatic memory management, making string manipulation safer and easier than with C-style character arrays. Header: #include &lt;string&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Note (Small String Optimization - SSO):</strong> Most modern STL implementations use SSO. For small strings (typically up to 15-22 characters), the string data is stored directly inside the string object itself, avoiding any heap allocation. This makes creating and manipulating small strings incredibly fast.</p>
+
+    <div class="toc-container bg-gray-700 rounded-lg p-4 mb-6">
+        <h4 class="text-lg font-semibold text-cyan-300 mb-3">📋 Table of Contents</h4>
+        <ul class="space-y-2 text-sm">
+            <li><a href="#constructors" class="text-cyan-400 hover:text-cyan-200 transition-colors">Constructors</a></li>
+            <li><a href="#iterators" class="text-cyan-400 hover:text-cyan-200 transition-colors">Iterators</a></li>
+            <li><a href="#modifiers" class="text-cyan-400 hover:text-cyan-200 transition-colors">Modifiers</a></li>
+            <li><a href="#string-operations" class="text-cyan-400 hover:text-cyan-200 transition-colors">String Operations</a></li>
+            <li><a href="#implementation-patterns" class="text-cyan-400 hover:text-cyan-200 transition-colors">Implementation Patterns</a></li>
+        </ul>
+    </div>
+
+    <div class="space-y-12">
+        <div>
+            <h3 id="constructors" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                    <pre><code class="language-cpp">string();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty string with a size of 0.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s1; // s1 is ""</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(2) From C-string</h5>
+                    <pre><code class="language-cpp">string( const char* s );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a string by copying a null-terminated C-style string.</p>
+                    <pre class="ml-4"><code class="language-cpp">const char* c_str = "Hello, world!";
+std::string s2(c_str); // s2 is "Hello, world!"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(3) From C-string with length (Substring)</h5>
+                    <pre><code class="language-cpp">string( const char* s, size_type count );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a string by copying the first `count` characters from a character array. The array does not need to be null-terminated.</p>
+                    <pre class="ml-4"><code class="language-cpp">char chars[] = {'C', '+', '+', ' ', 'i', 's', ' ', 'f', 'u', 'n'};
+std::string s3(chars, 3); // s3 is "C++"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(4) Fill Constructor</h5>
+                    <pre><code class="language-cpp">string( size_type count, char ch );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a string containing `count` copies of the character `ch`.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s4(5, '*'); // s4 is "*****"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(5) Copy &amp; Move Constructors</h5>
+                    <pre><code class="language-cpp">string( const string&amp; other );
+string( string&amp;&amp; other ) noexcept;</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a string by copying or moving another string object.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string original = "abc";
+std::string copy(original);      // copy is "abc", original is still "abc"
+std::string moved(std::move(original)); // moved is "abc", original is now in a valid but unspecified state (likely empty)</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(6) From Iterator Range</h5>
+                    <pre><code class="language-cpp">template&lt; class InputIt &gt;
+string( InputIt first, InputIt last );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a string from the sequence of characters in the range `[first, last)`.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;char&gt; vec = {'a', 'b', 'c', 'd', 'e'};
+std::string s6(vec.begin() + 1, vec.begin() + 4); // s6 is "bcd"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(7) From Initializer List</h5>
+                    <pre><code class="language-cpp">string( std::initializer_list&lt;char&gt; ilist );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a string from an initializer list. (Since C++11)</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s7 = {'H', 'i', '!'}; // s7 is "Hi!"</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="iterators" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Iterators</h3>
+            <p class="text-gray-400 mt-2 mb-3">`std::string` provides random access iterators.</p>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">begin, end, cbegin, cend</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Return iterators to the beginning and one-past-the-end of the string.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "abc";
+for (auto it = s.begin(); it != s.end(); ++it) {
+    std::cout &lt;&lt; *it; // Prints "abc"
+}
+// Using cbegin for const access
+for (auto it = s.cbegin(); it != s.cend(); ++it) {
+    // *it = 'x'; // Compile error: iterator is const
+}</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">rbegin, rend, crbegin, crend</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Return reverse iterators for iterating backwards.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "abc";
+for (auto it = s.rbegin(); it != s.rend(); ++it) {
+    std::cout &lt;&lt; *it; // Prints "cba"
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="modifiers" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Modifiers</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">push_back</h5>
+                    <pre><code class="language-cpp">void push_back( char ch );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Appends a single character to the end of the string.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "Hello";
+s.push_back('!'); // s is now "Hello!"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">pop_back</h5>
+                    <pre><code class="language-cpp">void pop_back();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Removes the last character from the string. (Since C++11)</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "Hello!";
+s.pop_back(); // s is now "Hello"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">append</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Appends characters to the end. Has many overloads.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "start";
+s.append(" end");               // s is "start end"
+s.append(3, '!');              // s is "start end!!!"
+std::string s2 = " another";
+s.append(s2, 0, 4);            // s is "start end!!! ano"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">insert</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Inserts characters at a specified position.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "world";
+s.insert(0, "Hello ");         // s is "Hello world"
+s.insert(5, 1, ',');          // s is "Hello, world"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">erase</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Removes characters from the string.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "This is a test sentence.";
+s.erase(4, 3); // Erase 3 chars starting at index 4 (" is") -> "This a test sentence."
+s.erase(s.find('a')); // Erase from 'a' to the end -> "This "
+s.erase(s.begin() + 1, s.end() - 1); // Erase a range -> "Ts"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">replace</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Replaces a section of the string with different content.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "The quick brown fox";
+s.replace(4, 5, "slow"); // Replace "quick" with "slow" -> "The slow brown fox"
+s.replace(s.find("brown"), 5, "red"); // -> "The slow red fox"</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="string-operations" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">String Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">find, rfind</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Finds the first (`find`) or last (`rfind`) occurrence of a substring. Returns `std::string::npos` if not found.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "one two three two one";
+size_t pos1 = s.find("two");      // pos1 is 4
+size_t pos2 = s.rfind("two");     // pos2 is 14
+size_t pos3 = s.find("four");     // pos3 is std::string::npos</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">find_first_of, find_last_of</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Finds the first or last character that is also present in a given character set.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "Hello, world!";
+std::string vowels = "aeiou";
+size_t pos1 = s.find_first_of(vowels); // pos1 is 1 ('e')
+size_t pos2 = s.find_last_of(vowels);  // pos2 is 8 ('o')</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">find_first_not_of, find_last_not_of</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Finds the first or last character that is NOT in a given character set.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "   leading and trailing spaces   ";
+size_t first = s.find_first_not_of(" "); // first is 3 (index of 'l')
+size_t last = s.find_last_not_of(" ");   // last is 28 (index of 's')
+std::string trimmed = s.substr(first, last - first + 1); // "leading and trailing spaces"</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">substr</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Returns a new string that is a copy of a portion of the original string.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s = "0123456789";
+std::string sub = s.substr(3, 4); // "3456" (start at index 3, copy 4 chars)</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">compare</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Compares two strings lexicographically. Returns 0 if equal, <0 if `*this` is smaller, >0 if `*this` is larger. Prefer using `==`, `!=`, `<`, `>` operators for clarity.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string s1 = "apple";
+std::string s2 = "apply";
+if (s1.compare(s2) < 0) {
+    // s1 comes before s2 alphabetically
+}
+// Clearer version:
+if (s1 < s2) { /* ... */ }</code></pre>
+                </div>
+                <div>
+                    <h5 class="font-mono text-md text-green-300">starts_with, ends_with, contains</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Convenient methods for checking prefixes, suffixes, and substrings.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::string filename = "document.pdf";
+if (filename.starts_with("doc")) { /* true */ } // C++20
+if (filename.ends_with(".pdf")) { /* true */ } // C++20
+if (filename.contains("umen")) { /* true */ } // C++23</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 id="implementation-patterns" class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">Library of `std::string` Implementation Patterns</h3>
+    <div class="space-y-4">
+        <details>
+            <summary class="font-semibold text-lg">1. Case Conversion (Upper/Lower)</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Converts a string to all uppercase or all lowercase using `std::transform`.</p>
+                <pre><code class="language-cpp">#include &lt;algorithm&gt;
+#include &lt;cctype&gt;
+
+std::string str = "Hello World";
+std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+// str is now "hello world"
+
+std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+// str is now "HELLO WORLD"</code></pre>
+            </div>
+        </details>
+        <details>
+            <summary class="font-semibold text-lg">2. Trimming Whitespace (Left, Right, Both)</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Removes leading and/or trailing whitespace from a string.</p>
+                <pre><code class="language-cpp">const std::string WHITESPACE = " \\n\\r\\t\\f\\v";
+
+std::string ltrim(const std::string& s) {
+    size_t start = s.find_first_not_of(WHITESPACE);
+    return (start == std::string::npos) ? "" : s.substr(start);
+}
+
+std::string rtrim(const std::string& s) {
+    size_t end = s.find_last_not_of(WHITESPACE);
+    return (end == std::string::npos) ? "" : s.substr(0, end + 1);
+}
+
+std::string trim(const std::string& s) {
+    return rtrim(ltrim(s));
+}</code></pre>
+            </div>
+        </details>
+        <!-- More patterns will continue... -->
+    </div>
+</div>

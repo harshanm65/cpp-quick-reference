@@ -1,0 +1,112 @@
+<div id="map-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::map In-Depth</h2>
+    <p class="mb-4 text-gray-400">An associative container that stores key-value pairs in sorted order. Implemented typically as a balanced binary search tree (often Red-Black tree). Header: #include &lt;map&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Characteristics:</strong> O(log n) search, insertion, and deletion. Keys are automatically sorted. Unique keys only.</p>
+
+    <div class="toc-container bg-gray-700 rounded-lg p-4 mb-6">
+        <h4 class="text-lg font-semibold text-cyan-300 mb-3">📋 Table of Contents</h4>
+        <ul class="space-y-2 text-sm">
+            <li><a href="#basic-operations" class="text-cyan-400 hover:text-cyan-200 transition-colors">Basic Operations</a></li>
+            <li><a href="#iteration" class="text-cyan-400 hover:text-cyan-200 transition-colors">Iteration</a></li>
+            <li><a href="#common-patterns" class="text-cyan-400 hover:text-cyan-200 transition-colors">Common Patterns</a></li>
+        </ul>
+    </div>
+
+    <div class="space-y-12">
+        <div>
+            <h3 id="basic-operations" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Basic Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Construction and Insertion</h5>
+                    <pre class="ml-4"><code class="language-cpp">std::map&lt;std::string, int&gt; ages;
+
+// Insert using subscript operator
+ages["Alice"] = 30;
+ages["Bob"] = 25;
+
+// Insert using insert()
+ages.insert({"Charlie", 35});
+ages.insert(std::make_pair("David", 28));
+
+// Insert using emplace
+ages.emplace("Eve", 32);
+
+// Result: sorted by key alphabetically
+// Alice: 30, Bob: 25, Charlie: 35, David: 28, Eve: 32</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Finding and Accessing Elements</h5>
+                    <pre class="ml-4"><code class="language-cpp">auto it = ages.find("Alice");
+if (it != ages.end()) {
+    std::cout &lt;&lt; "Alice is " &lt;&lt; it->second &lt;&lt; " years old" &lt;&lt; std::endl;
+}
+
+// Using at() - throws exception if key doesn't exist
+try {
+    int age = ages.at("Frank"); // throws std::out_of_range
+} catch (const std::out_of_range&amp; e) {
+    std::cout &lt;&lt; "Frank not found" &lt;&lt; std::endl;
+}
+
+// Using operator[] - creates element if it doesn't exist
+int default_age = ages["Frank"]; // Creates Frank with value 0</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="iteration" class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Iteration</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Range-based For Loop</h5>
+                    <pre class="ml-4"><code class="language-cpp">// Iterate through all key-value pairs (sorted by key)
+for (const auto&amp; [name, age] : ages) {
+    std::cout &lt;&lt; name &lt;&lt; ": " &lt;&lt; age &lt;&lt; std::endl;
+}
+
+// Pre-C++17 syntax
+for (const auto&amp; pair : ages) {
+    std::cout &lt;&lt; pair.first &lt;&lt; ": " &lt;&lt; pair.second &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 id="common-patterns" class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">Common std::map Patterns</h3>
+    <div class="space-y-4">
+        <details>
+            <summary class="font-semibold text-lg">1. Frequency Counter</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Count occurrences of elements using a map.</p>
+                <pre><code class="language-cpp">std::vector&lt;std::string&gt; words = {"apple", "banana", "apple", "cherry", "banana", "apple"};
+std::map&lt;std::string, int&gt; frequency;
+
+for (const auto&amp; word : words) {
+    frequency[word]++; // Auto-creates entry with 0 if doesn't exist
+}
+
+// Result: apple: 3, banana: 2, cherry: 1</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">2. Custom Comparator</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Use custom sorting criteria for keys.</p>
+                <pre><code class="language-cpp">// Sort strings by length instead of alphabetically
+std::map&lt;std::string, int, std::function&lt;bool(const std::string&amp;, const std::string&amp;)&gt;&gt;
+    length_map([](const std::string&amp; a, const std::string&amp; b) {
+        if (a.length() != b.length()) return a.length() &lt; b.length();
+        return a &lt; b; // Same length: alphabetical order
+    });
+
+length_map["cat"] = 1;
+length_map["elephant"] = 2;
+length_map["dog"] = 3;
+// Order: cat, dog, elephant</code></pre>
+            </div>
+        </details>
+    </div>
+</div>

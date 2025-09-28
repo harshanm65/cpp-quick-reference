@@ -1,0 +1,1171 @@
+<div id="custom_types-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">Custom Types and Advanced Language Features</h2>
+    <p class="mb-4 text-gray-400">C++ provides powerful mechanisms for creating custom types through enums, unions, structs, and advanced language features like templates, concepts, and type traits. These features enable writing generic, type-safe, and expressive code that can be customized for specific use cases.</p>
+    <p class="mb-6 text-gray-400"><strong>Key Features:</strong> Type safety, compile-time computation, generic programming, template metaprogramming, and modern C++ language constructs for cleaner, more maintainable code.</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Enumerations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Scoped Enumerations (enum class)</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Type-safe enumerations with scoped names and explicit underlying types.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Basic scoped enumeration
+enum class Color {
+    Red,
+    Green,
+    Blue,
+    Yellow
+};
+
+// Enumeration with explicit underlying type
+enum class Priority : char {
+    Low = 1,
+    Medium = 5,
+    High = 10,
+    Critical = 20
+};
+
+// Enumeration with custom values
+enum class HttpStatus : int {
+    OK = 200,
+    BadRequest = 400,
+    Unauthorized = 401,
+    NotFound = 404,
+    InternalServerError = 500
+};
+
+void basic_enum_usage() {
+    Color favorite = Color::Blue;
+    Priority task_priority = Priority::High;
+    HttpStatus response = HttpStatus::OK;
+
+    // Type safety - won't compile
+    // if (favorite == task_priority) {} // Error: different enum types
+
+    // Explicit conversion required
+    int priority_value = static_cast&lt;int&gt;(task_priority);
+    std::cout &lt;&lt; "Priority value: " &lt;&lt; priority_value &lt;&lt; std::endl; // 10
+
+    // Switch statement
+    switch (response) {
+        case HttpStatus::OK:
+            std::cout &lt;&lt; "Request successful" &lt;&lt; std::endl;
+            break;
+        case HttpStatus::NotFound:
+            std::cout &lt;&lt; "Resource not found" &lt;&lt; std::endl;
+            break;
+        default:
+            std::cout &lt;&lt; "Other status" &lt;&lt; std::endl;
+    }
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Enumeration Utilities and Operations</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Utility functions and operations for working with enumerations.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;string&gt;
+#include &lt;unordered_map&gt;
+#include &lt;type_traits&gt;
+
+// Enum to string conversion
+std::string to_string(Color color) {
+    switch (color) {
+        case Color::Red: return "Red";
+        case Color::Green: return "Green";
+        case Color::Blue: return "Blue";
+        case Color::Yellow: return "Yellow";
+        default: return "Unknown";
+    }
+}
+
+// String to enum conversion
+Color from_string(const std::string& str) {
+    static const std::unordered_map&lt;std::string, Color&gt; color_map = {
+        {"Red", Color::Red},
+        {"Green", Color::Green},
+        {"Blue", Color::Blue},
+        {"Yellow", Color::Yellow}
+    };
+
+    auto it = color_map.find(str);
+    if (it != color_map.end()) {
+        return it-&gt;second;
+    }
+    throw std::invalid_argument("Invalid color string: " + str);
+}
+
+// Template function to get underlying value
+template&lt;typename Enum&gt;
+constexpr auto to_underlying(Enum e) noexcept {
+    return static_cast&lt;std::underlying_type_t&lt;Enum&gt;&gt;(e);
+}
+
+// Enum iteration helper
+template&lt;typename Enum, Enum First, Enum Last&gt;
+class EnumRange {
+public:
+    class iterator {
+    private:
+        using underlying_t = std::underlying_type_t&lt;Enum&gt;;
+        underlying_t current;
+
+    public:
+        iterator(underlying_t value) : current(value) {}
+
+        Enum operator*() const { return static_cast&lt;Enum&gt;(current); }
+
+        iterator& operator++() {
+            ++current;
+            return *this;
+        }
+
+        bool operator!=(const iterator& other) const {
+            return current != other.current;
+        }
+    };
+
+    iterator begin() const {
+        return iterator(to_underlying(First));
+    }
+
+    iterator end() const {
+        return iterator(to_underlying(Last) + 1);
+    }
+};
+
+// Usage example
+void enum_utilities_example() {
+    // Enum to string
+    Color color = Color::Blue;
+    std::cout &lt;&lt; "Color: " &lt;&lt; to_string(color) &lt;&lt; std::endl;
+
+    // String to enum
+    try {
+        Color parsed = from_string("Red");
+        std::cout &lt;&lt; "Parsed color: " &lt;&lt; to_string(parsed) &lt;&lt; std::endl;
+    } catch (const std::exception& e) {
+        std::cout &lt;&lt; "Error: " &lt;&lt; e.what() &lt;&lt; std::endl;
+    }
+
+    // Get underlying value
+    Priority p = Priority::Critical;
+    std::cout &lt;&lt; "Priority underlying value: " &lt;&lt; to_underlying(p) &lt;&lt; std::endl;
+
+    // Iterate through enum values
+    std::cout &lt;&lt; "All colors: ";
+    for (auto c : EnumRange&lt;Color, Color::Red, Color::Yellow&gt;{}) {
+        std::cout &lt;&lt; to_string(c) &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Unions and Variants</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Traditional Unions and Type-Safe Unions</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Understanding unions and their modern alternative: std::variant.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;variant&gt;
+#include &lt;string&gt;
+
+// Traditional union (be careful with non-trivial types)
+union SimpleUnion {
+    int integer;
+    float floating_point;
+    char character;
+
+    SimpleUnion() : integer(0) {} // Must initialize one member
+    ~SimpleUnion() {} // Destructor does nothing for trivial types
+};
+
+// Tagged union for type safety
+enum class ValueType { Integer, Float, String };
+
+struct TaggedUnion {
+    ValueType type;
+    union {
+        int int_value;
+        float float_value;
+        // Cannot have std::string directly in union without custom management
+    };
+
+    TaggedUnion(int value) : type(ValueType::Integer), int_value(value) {}
+    TaggedUnion(float value) : type(ValueType::Float), float_value(value) {}
+
+    int get_int() const {
+        if (type != ValueType::Integer) {
+            throw std::runtime_error("Not an integer");
+        }
+        return int_value;
+    }
+
+    float get_float() const {
+        if (type != ValueType::Float) {
+            throw std::runtime_error("Not a float");
+        }
+        return float_value;
+    }
+};
+
+// Modern approach: std::variant (C++17)
+using ModernVariant = std::variant&lt;int, float, std::string&gt;;
+
+void variant_examples() {
+    // Creating variants
+    ModernVariant v1 = 42;
+    ModernVariant v2 = 3.14f;
+    ModernVariant v3 = std::string("Hello, World!");
+
+    // Check which type is currently held
+    std::cout &lt;&lt; "v1 holds index: " &lt;&lt; v1.index() &lt;&lt; std::endl; // 0 (int)
+    std::cout &lt;&lt; "v2 holds index: " &lt;&lt; v2.index() &lt;&lt; std::endl; // 1 (float)
+    std::cout &lt;&lt; "v3 holds index: " &lt;&lt; v3.index() &lt;&lt; std::endl; // 2 (string)
+
+    // Type checking
+    if (std::holds_alternative&lt;int&gt;(v1)) {
+        std::cout &lt;&lt; "v1 holds an int: " &lt;&lt; std::get&lt;int&gt;(v1) &lt;&lt; std::endl;
+    }
+
+    // Safe access with get_if
+    if (auto* str_ptr = std::get_if&lt;std::string&gt;(&v3)) {
+        std::cout &lt;&lt; "v3 holds string: " &lt;&lt; *str_ptr &lt;&lt; std::endl;
+    }
+
+    // Visitor pattern with std::visit
+    auto visitor = [](const auto& value) {
+        using T = std::decay_t&lt;decltype(value)&gt;;
+        if constexpr (std::is_same_v&lt;T, int&gt;) {
+            std::cout &lt;&lt; "Integer: " &lt;&lt; value &lt;&lt; std::endl;
+        } else if constexpr (std::is_same_v&lt;T, float&gt;) {
+            std::cout &lt;&lt; "Float: " &lt;&lt; value &lt;&lt; std::endl;
+        } else if constexpr (std::is_same_v&lt;T, std::string&gt;) {
+            std::cout &lt;&lt; "String: " &lt;&lt; value &lt;&lt; std::endl;
+        }
+    };
+
+    std::visit(visitor, v1);
+    std::visit(visitor, v2);
+    std::visit(visitor, v3);
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Advanced Variant Usage</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Complex variant patterns and real-world applications.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;memory&gt;
+#include &lt;vector&gt;
+
+// Expression tree using variants
+struct Number {
+    double value;
+    Number(double v) : value(v) {}
+};
+
+struct Variable {
+    std::string name;
+    Variable(const std::string& n) : name(n) {}
+};
+
+struct BinaryOp;
+using Expression = std::variant&lt;Number, Variable, std::unique_ptr&lt;BinaryOp&gt;&gt;;
+
+struct BinaryOp {
+    enum class Op { Add, Subtract, Multiply, Divide };
+    Op operation;
+    Expression left;
+    Expression right;
+
+    BinaryOp(Op op, Expression l, Expression r)
+        : operation(op), left(std::move(l)), right(std::move(r)) {}
+};
+
+// Expression evaluator
+class ExpressionEvaluator {
+private:
+    std::unordered_map&lt;std::string, double&gt; variables;
+
+public:
+    void set_variable(const std::string& name, double value) {
+        variables[name] = value;
+    }
+
+    double evaluate(const Expression& expr) {
+        return std::visit([this](const auto& value) -&gt; double {
+            using T = std::decay_t&lt;decltype(value)&gt;;
+
+            if constexpr (std::is_same_v&lt;T, Number&gt;) {
+                return value.value;
+            }
+            else if constexpr (std::is_same_v&lt;T, Variable&gt;) {
+                auto it = variables.find(value.name);
+                if (it == variables.end()) {
+                    throw std::runtime_error("Undefined variable: " + value.name);
+                }
+                return it-&gt;second;
+            }
+            else if constexpr (std::is_same_v&lt;T, std::unique_ptr&lt;BinaryOp&gt;&gt;) {
+                double left_val = evaluate(value-&gt;left);
+                double right_val = evaluate(value-&gt;right);
+
+                switch (value-&gt;operation) {
+                    case BinaryOp::Op::Add:
+                        return left_val + right_val;
+                    case BinaryOp::Op::Subtract:
+                        return left_val - right_val;
+                    case BinaryOp::Op::Multiply:
+                        return left_val * right_val;
+                    case BinaryOp::Op::Divide:
+                        if (right_val == 0.0) {
+                            throw std::runtime_error("Division by zero");
+                        }
+                        return left_val / right_val;
+                }
+                return 0.0; // Should never reach here
+            }
+        }, expr);
+    }
+};
+
+// Helper functions for creating expressions
+Expression make_number(double value) {
+    return Number{value};
+}
+
+Expression make_variable(const std::string& name) {
+    return Variable{name};
+}
+
+Expression make_binary_op(BinaryOp::Op op, Expression left, Expression right) {
+    return std::make_unique&lt;BinaryOp&gt;(op, std::move(left), std::move(right));
+}
+
+void expression_tree_example() {
+    ExpressionEvaluator evaluator;
+    evaluator.set_variable("x", 5.0);
+    evaluator.set_variable("y", 3.0);
+
+    // Create expression: (x + 2) * (y - 1)
+    auto expr = make_binary_op(
+        BinaryOp::Op::Multiply,
+        make_binary_op(BinaryOp::Op::Add, make_variable("x"), make_number(2.0)),
+        make_binary_op(BinaryOp::Op::Subtract, make_variable("y"), make_number(1.0))
+    );
+
+    try {
+        double result = evaluator.evaluate(expr);
+        std::cout &lt;&lt; "Expression result: " &lt;&lt; result &lt;&lt; std::endl; // (5+2)*(3-1) = 14
+    } catch (const std::exception& e) {
+        std::cout &lt;&lt; "Error: " &lt;&lt; e.what() &lt;&lt; std::endl;
+    }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Structures and POD Types</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Plain Old Data (POD) and Aggregate Types</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Understanding POD types, aggregates, and their properties.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;type_traits&gt;
+#include &lt;cstring&gt;
+
+// Simple POD struct
+struct Point2D {
+    int x;
+    int y;
+};
+
+// Non-POD struct (has constructor)
+struct Point3D {
+    int x, y, z;
+
+    Point3D(int x_val, int y_val, int z_val) : x(x_val), y(y_val), z(z_val) {}
+};
+
+// Aggregate struct (C++11+)
+struct Rectangle {
+    Point2D top_left;
+    Point2D bottom_right;
+    std::string label; // Still aggregate even with non-POD member
+};
+
+// Complex struct with various features
+struct Employee {
+    int id;
+    std::string name;
+    double salary;
+    bool is_active = true; // Default member initializer
+
+    // Default constructor
+    Employee() = default;
+
+    // Constructor
+    Employee(int id, const std::string& name, double salary)
+        : id(id), name(name), salary(salary) {}
+
+    // Member function
+    void give_raise(double percentage) {
+        salary *= (1.0 + percentage / 100.0);
+    }
+};
+
+void pod_and_aggregate_examples() {
+    // POD operations
+    Point2D p1{10, 20}; // Aggregate initialization
+    Point2D p2;
+    std::memcpy(&p2, &p1, sizeof(Point2D)); // Safe for POD types
+
+    std::cout &lt;&lt; "Point2D is POD: " &lt;&lt; std::is_pod_v&lt;Point2D&gt; &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Point3D is POD: " &lt;&lt; std::is_pod_v&lt;Point3D&gt; &lt;&lt; std::endl;
+
+    // Aggregate initialization
+    Rectangle rect = {
+        {0, 0},      // top_left
+        {100, 50},   // bottom_right
+        "Main Window" // label
+    };
+
+    // Designated initializers (C++20)
+    // Rectangle rect2 = {.top_left = {5, 5}, .bottom_right = {95, 45}};
+
+    // Type traits
+    std::cout &lt;&lt; "Rectangle is aggregate: " &lt;&lt; std::is_aggregate_v&lt;Rectangle&gt; &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Employee is aggregate: " &lt;&lt; std::is_aggregate_v&lt;Employee&gt; &lt;&lt; std::endl;
+
+    // Size and alignment
+    std::cout &lt;&lt; "Point2D size: " &lt;&lt; sizeof(Point2D) &lt;&lt; " bytes" &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Point2D alignment: " &lt;&lt; alignof(Point2D) &lt;&lt; " bytes" &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Structured Bindings and Decomposition</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Modern C++ structured bindings for elegant data unpacking.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;tuple&gt;
+#include &lt;map&gt;
+#include &lt;array&gt;
+
+// Struct for structured binding
+struct PersonInfo {
+    std::string name;
+    int age;
+    std::string city;
+};
+
+// Function returning multiple values
+std::tuple&lt;int, std::string, bool&gt; get_user_data() {
+    return {42, "Alice", true};
+}
+
+// Function returning pair
+std::pair&lt;int, int&gt; divide_with_remainder(int dividend, int divisor) {
+    return {dividend / divisor, dividend % divisor};
+}
+
+void structured_bindings_examples() {
+    // Basic structured binding with struct
+    PersonInfo person = {"John Doe", 30, "New York"};
+    auto [name, age, city] = person;
+    std::cout &lt;&lt; "Name: " &lt;&lt; name &lt;&lt; ", Age: " &lt;&lt; age &lt;&lt; ", City: " &lt;&lt; city &lt;&lt; std::endl;
+
+    // Structured binding with tuple
+    auto [id, username, active] = get_user_data();
+    std::cout &lt;&lt; "ID: " &lt;&lt; id &lt;&lt; ", Username: " &lt;&lt; username &lt;&lt; ", Active: " &lt;&lt; active &lt;&lt; std::endl;
+
+    // Structured binding with pair
+    auto [quotient, remainder] = divide_with_remainder(17, 5);
+    std::cout &lt;&lt; "17 / 5 = " &lt;&lt; quotient &lt;&lt; " remainder " &lt;&lt; remainder &lt;&lt; std::endl;
+
+    // Structured binding with arrays
+    std::array&lt;int, 3&gt; coordinates = {1, 2, 3};
+    auto [x, y, z] = coordinates;
+    std::cout &lt;&lt; "Coordinates: (" &lt;&lt; x &lt;&lt; ", " &lt;&lt; y &lt;&lt; ", " &lt;&lt; z &lt;&lt; ")" &lt;&lt; std::endl;
+
+    // Structured binding in range-based for loop
+    std::map&lt;std::string, int&gt; scores = {
+        {"Alice", 95},
+        {"Bob", 87},
+        {"Charlie", 92}
+    };
+
+    std::cout &lt;&lt; "Scores:" &lt;&lt; std::endl;
+    for (const auto& [player, score] : scores) {
+        std::cout &lt;&lt; "  " &lt;&lt; player &lt;&lt; ": " &lt;&lt; score &lt;&lt; std::endl;
+    }
+
+    // Ignoring some values
+    auto [first, _, third] = coordinates; // C++26 will support _ for unused
+    // For now, use [[maybe_unused]]
+    auto [a, [[maybe_unused]] b, c] = coordinates;
+    std::cout &lt;&lt; "First and third: " &lt;&lt; a &lt;&lt; ", " &lt;&lt; c &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Template Metaprogramming</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Type Traits and SFINAE</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Compile-time type introspection and conditional compilation.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;type_traits&gt;
+#include &lt;iostream&gt;
+
+// Custom type trait
+template&lt;typename T&gt;
+struct is_string : std::false_type {};
+
+template&lt;&gt;
+struct is_string&lt;std::string&gt; : std::true_type {};
+
+template&lt;typename T&gt;
+constexpr bool is_string_v = is_string&lt;T&gt;::value;
+
+// SFINAE (Substitution Failure Is Not An Error) examples
+template&lt;typename T&gt;
+std::enable_if_t&lt;std::is_arithmetic_v&lt;T&gt;, void&gt;
+print_value(const T& value) {
+    std::cout &lt;&lt; "Arithmetic value: " &lt;&lt; value &lt;&lt; std::endl;
+}
+
+template&lt;typename T&gt;
+std::enable_if_t&lt;is_string_v&lt;T&gt;, void&gt;
+print_value(const T& value) {
+    std::cout &lt;&lt; "String value: \"" &lt;&lt; value &lt;&lt; "\"" &lt;&lt; std::endl;
+}
+
+// Modern approach with if constexpr (C++17)
+template&lt;typename T&gt;
+void modern_print_value(const T& value) {
+    if constexpr (std::is_arithmetic_v&lt;T&gt;) {
+        std::cout &lt;&lt; "Arithmetic value: " &lt;&lt; value &lt;&lt; std::endl;
+    } else if constexpr (is_string_v&lt;T&gt;) {
+        std::cout &lt;&lt; "String value: \"" &lt;&lt; value &lt;&lt; "\"" &lt;&lt; std::endl;
+    } else {
+        std::cout &lt;&lt; "Other type" &lt;&lt; std::endl;
+    }
+}
+
+// Detection idiom
+namespace detail {
+    template&lt;typename T, typename = void&gt;
+    struct has_size : std::false_type {};
+
+    template&lt;typename T&gt;
+    struct has_size&lt;T, std::void_t&lt;decltype(std::declval&lt;T&gt;().size())&gt;&gt;
+        : std::true_type {};
+}
+
+template&lt;typename T&gt;
+constexpr bool has_size_v = detail::has_size&lt;T&gt;::value;
+
+// Function that only works with types that have size() method
+template&lt;typename Container&gt;
+std::enable_if_t&lt;has_size_v&lt;Container&gt;, size_t&gt;
+get_container_size(const Container& container) {
+    return container.size();
+}
+
+void type_traits_examples() {
+    // Type trait usage
+    std::cout &lt;&lt; "int is arithmetic: " &lt;&lt; std::is_arithmetic_v&lt;int&gt; &lt;&lt; std::endl;
+    std::cout &lt;&lt; "string is arithmetic: " &lt;&lt; std::is_arithmetic_v&lt;std::string&gt; &lt;&lt; std::endl;
+    std::cout &lt;&lt; "string is string: " &lt;&lt; is_string_v&lt;std::string&gt; &lt;&lt; std::endl;
+
+    // SFINAE in action
+    print_value(42);
+    print_value(std::string("Hello"));
+
+    // Modern approach
+    modern_print_value(3.14);
+    modern_print_value(std::string("World"));
+
+    // Detection idiom
+    std::vector&lt;int&gt; vec = {1, 2, 3};
+    std::string str = "test";
+
+    std::cout &lt;&lt; "vector has size: " &lt;&lt; has_size_v&lt;std::vector&lt;int&gt;&gt; &lt;&lt; std::endl;
+    std::cout &lt;&lt; "string has size: " &lt;&lt; has_size_v&lt;std::string&gt; &lt;&lt; std::endl;
+    std::cout &lt;&lt; "int has size: " &lt;&lt; has_size_v&lt;int&gt; &lt;&lt; std::endl;
+
+    std::cout &lt;&lt; "Vector size: " &lt;&lt; get_container_size(vec) &lt;&lt; std::endl;
+    std::cout &lt;&lt; "String size: " &lt;&lt; get_container_size(str) &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Variadic Templates and Perfect Forwarding</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Template parameter packs and universal references for flexible function interfaces.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;utility&gt;
+#include &lt;memory&gt;
+
+// Basic variadic template
+template&lt;typename... Args&gt;
+void print_values(Args... args) {
+    ((std::cout &lt;&lt; args &lt;&lt; " "), ...); // C++17 fold expression
+    std::cout &lt;&lt; std::endl;
+}
+
+// Recursive variadic template (pre-C++17 style)
+template&lt;typename First&gt;
+void print_recursive(First&& first) {
+    std::cout &lt;&lt; first &lt;&lt; std::endl;
+}
+
+template&lt;typename First, typename... Rest&gt;
+void print_recursive(First&& first, Rest&&... rest) {
+    std::cout &lt;&lt; first &lt;&lt; " ";
+    print_recursive(rest...);
+}
+
+// Perfect forwarding wrapper
+template&lt;typename F, typename... Args&gt;
+auto call_function(F&& func, Args&&... args) -&gt; decltype(func(std::forward&lt;Args&gt;(args)...)) {
+    std::cout &lt;&lt; "Calling function with " &lt;&lt; sizeof...(args) &lt;&lt; " arguments" &lt;&lt; std::endl;
+    return func(std::forward&lt;Args&gt;(args)...);
+}
+
+// Variadic template class
+template&lt;typename... Types&gt;
+class TypeList {};
+
+// Template specialization for type list operations
+template&lt;&gt;
+class TypeList&lt;&gt; {
+public:
+    static constexpr size_t size = 0;
+};
+
+template&lt;typename Head, typename... Tail&gt;
+class TypeList&lt;Head, Tail...&gt; {
+public:
+    using head_type = Head;
+    using tail_type = TypeList&lt;Tail...&gt;;
+    static constexpr size_t size = 1 + sizeof...(Tail);
+};
+
+// Factory function with perfect forwarding
+template&lt;typename T, typename... Args&gt;
+std::unique_ptr&lt;T&gt; make_unique_with_logging(Args&&... args) {
+    std::cout &lt;&lt; "Creating object of type: " &lt;&lt; typeid(T).name() &lt;&lt; std::endl;
+    return std::make_unique&lt;T&gt;(std::forward&lt;Args&gt;(args)...);
+}
+
+// Compile-time computation with variadic templates
+template&lt;int... Numbers&gt;
+struct Sum {
+    static constexpr int value = (Numbers + ...); // C++17 fold expression
+};
+
+// Pre-C++17 version
+template&lt;int First, int... Rest&gt;
+struct SumRecursive {
+    static constexpr int value = First + SumRecursive&lt;Rest...&gt;::value;
+};
+
+template&lt;int Last&gt;
+struct SumRecursive&lt;Last&gt; {
+    static constexpr int value = Last;
+};
+
+void variadic_templates_examples() {
+    // Basic variadic function
+    print_values(1, 2.5, "hello", 'c');
+
+    // Recursive version
+    print_recursive("Recursive:", 42, 3.14, "world");
+
+    // Perfect forwarding
+    auto add = [](int a, int b) { return a + b; };
+    int result = call_function(add, 5, 3);
+    std::cout &lt;&lt; "Result: " &lt;&lt; result &lt;&lt; std::endl;
+
+    // Type list usage
+    using MyTypes = TypeList&lt;int, double, std::string&gt;;
+    std::cout &lt;&lt; "Type list size: " &lt;&lt; MyTypes::size &lt;&lt; std::endl;
+
+    // Factory with logging
+    auto ptr = make_unique_with_logging&lt;std::string&gt;("Hello, World!");
+    std::cout &lt;&lt; "Created string: " &lt;&lt; *ptr &lt;&lt; std::endl;
+
+    // Compile-time computation
+    constexpr int sum = Sum&lt;1, 2, 3, 4, 5&gt;::value;
+    std::cout &lt;&lt; "Sum of 1,2,3,4,5: " &lt;&lt; sum &lt;&lt; std::endl;
+
+    constexpr int sum_recursive = SumRecursive&lt;10, 20, 30&gt;::value;
+    std::cout &lt;&lt; "Recursive sum of 10,20,30: " &lt;&lt; sum_recursive &lt;&lt; std::endl;
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Concepts (C++20)</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Basic Concepts and Constraints</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Type constraints for more expressive and safer template programming.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;concepts&gt;
+#include &lt;iterator&gt;
+
+// Basic concept definition
+template&lt;typename T&gt;
+concept Numeric = std::integral&lt;T&gt; || std::floating_point&lt;T&gt;;
+
+// Custom concept
+template&lt;typename T&gt;
+concept Printable = requires(T t, std::ostream& os) {
+    os &lt;&lt; t; // T must be streamable
+};
+
+// Container concept
+template&lt;typename T&gt;
+concept Container = requires(T t) {
+    t.begin();
+    t.end();
+    t.size();
+    typename T::value_type;
+};
+
+// Iterator concept
+template&lt;typename T&gt;
+concept ForwardIterator = std::forward_iterator&lt;T&gt;;
+
+// Constrained function templates
+template&lt;Numeric T&gt;
+T add(T a, T b) {
+    return a + b;
+}
+
+template&lt;Printable T&gt;
+void print(const T& value) {
+    std::cout &lt;&lt; "Printing: " &lt;&lt; value &lt;&lt; std::endl;
+}
+
+// Alternative syntax
+template&lt;typename T&gt;
+    requires Container&lt;T&gt;
+void print_container(const T& container) {
+    std::cout &lt;&lt; "Container contents: ";
+    for (const auto& item : container) {
+        std::cout &lt;&lt; item &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+}
+
+// Trailing requires clause
+template&lt;typename T&gt;
+void process_number(T value) requires Numeric&lt;T&gt; {
+    std::cout &lt;&lt; "Processing number: " &lt;&lt; value &lt;&lt; std::endl;
+}
+
+void basic_concepts_examples() {
+    // Concepts in action
+    auto sum_int = add(5, 3);           // OK: int satisfies Numeric
+    auto sum_double = add(2.5, 1.5);   // OK: double satisfies Numeric
+    // auto sum_string = add("a", "b"); // Error: string doesn't satisfy Numeric
+
+    print(42);          // OK: int is printable
+    print("Hello");     // OK: string is printable
+    // print(some_class); // Error if some_class is not printable
+
+    std::vector&lt;int&gt; vec = {1, 2, 3, 4, 5};
+    print_container(vec); // OK: vector satisfies Container
+
+    process_number(100);   // OK: int satisfies Numeric
+    process_number(3.14f); // OK: float satisfies Numeric
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Advanced Concepts and Compositions</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Complex concept definitions and concept compositions.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Complex concept with multiple requirements
+template&lt;typename T&gt;
+concept Comparable = requires(T a, T b) {
+    { a == b } -&gt; std::convertible_to&lt;bool&gt;;
+    { a != b } -&gt; std::convertible_to&lt;bool&gt;;
+    { a &lt; b } -&gt; std::convertible_to&lt;bool&gt;;
+    { a &gt; b } -&gt; std::convertible_to&lt;bool&gt;;
+    { a &lt;= b } -&gt; std::convertible_to&lt;bool&gt;;
+    { a &gt;= b } -&gt; std::convertible_to&lt;bool&gt;;
+};
+
+// Concept composition
+template&lt;typename T&gt;
+concept SortableContainer = Container&lt;T&gt; && requires(T t) {
+    std::sort(t.begin(), t.end());
+    requires Comparable&lt;typename T::value_type&gt;;
+};
+
+// Concept with type constraints
+template&lt;typename T&gt;
+concept StringLike = requires(T t) {
+    { t.c_str() } -&gt; std::convertible_to&lt;const char*&gt;;
+    { t.length() } -&gt; std::convertible_to&lt;size_t&gt;;
+    { t.substr(0, 1) } -&gt; std::convertible_to&lt;T&gt;;
+};
+
+// Nested requirements
+template&lt;typename T&gt;
+concept SmartPointer = requires(T t) {
+    *t;           // Must be dereferenceable
+    t.get();      // Must have get() method
+    t.reset();    // Must have reset() method
+    { static_cast&lt;bool&gt;(t) } -&gt; std::convertible_to&lt;bool&gt;; // Must be convertible to bool
+};
+
+// Function overloading with concepts
+template&lt;std::integral T&gt;
+void process(T value) {
+    std::cout &lt;&lt; "Processing integral: " &lt;&lt; value &lt;&lt; std::endl;
+}
+
+template&lt;std::floating_point T&gt;
+void process(T value) {
+    std::cout &lt;&lt; "Processing floating point: " &lt;&lt; value &lt;&lt; std::endl;
+}
+
+template&lt;StringLike T&gt;
+void process(const T& value) {
+    std::cout &lt;&lt; "Processing string-like: " &lt;&lt; value &lt;&lt; std::endl;
+}
+
+// Generic algorithm with concepts
+template&lt;SortableContainer Container&gt;
+void sort_and_print(Container& container) {
+    std::sort(container.begin(), container.end());
+    std::cout &lt;&lt; "Sorted container: ";
+    for (const auto& item : container) {
+        std::cout &lt;&lt; item &lt;&lt; " ";
+    }
+    std::cout &lt;&lt; std::endl;
+}
+
+// Abbreviated function template syntax (C++20)
+void abbreviated_syntax(Numeric auto value) {
+    std::cout &lt;&lt; "Value: " &lt;&lt; value &lt;&lt; std::endl;
+}
+
+void advanced_concepts_examples() {
+    // Comparable concept
+    std::cout &lt;&lt; "int is comparable: " &lt;&lt; Comparable&lt;int&gt; &lt;&lt; std::endl;
+    std::cout &lt;&lt; "string is comparable: " &lt;&lt; Comparable&lt;std::string&gt; &lt;&lt; std::endl;
+
+    // Function overloading based on concepts
+    process(42);          // Calls integral version
+    process(3.14);        // Calls floating point version
+    process(std::string("Hello")); // Calls string-like version
+
+    // Sortable container
+    std::vector&lt;int&gt; numbers = {5, 2, 8, 1, 9};
+    sort_and_print(numbers);
+
+    // Smart pointer concept
+    auto unique_ptr = std::make_unique&lt;int&gt;(42);
+    auto shared_ptr = std::make_shared&lt;std::string&gt;("Hello");
+
+    std::cout &lt;&lt; "unique_ptr is SmartPointer: " &lt;&lt; SmartPointer&lt;decltype(unique_ptr)&gt; &lt;&lt; std::endl;
+    std::cout &lt;&lt; "shared_ptr is SmartPointer: " &lt;&lt; SmartPointer&lt;decltype(shared_ptr)&gt; &lt;&lt; std::endl;
+
+    // Abbreviated syntax
+    abbreviated_syntax(100);
+    abbreviated_syntax(2.71);
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Advanced Type Manipulation</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Type Erasure and Any</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Runtime polymorphism without inheritance using type erasure.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;any&gt;
+#include &lt;functional&gt;
+
+// std::any usage
+void any_examples() {
+    std::any value;
+
+    // Store different types
+    value = 42;
+    std::cout &lt;&lt; "Stored int: " &lt;&lt; std::any_cast&lt;int&gt;(value) &lt;&lt; std::endl;
+
+    value = std::string("Hello");
+    std::cout &lt;&lt; "Stored string: " &lt;&lt; std::any_cast&lt;std::string&gt;(value) &lt;&lt; std::endl;
+
+    value = 3.14;
+    std::cout &lt;&lt; "Stored double: " &lt;&lt; std::any_cast&lt;double&gt;(value) &lt;&lt; std::endl;
+
+    // Type checking
+    if (value.type() == typeid(double)) {
+        std::cout &lt;&lt; "Contains a double" &lt;&lt; std::endl;
+    }
+
+    // Safe casting
+    try {
+        auto str_value = std::any_cast&lt;std::string&gt;(value);
+    } catch (const std::bad_any_cast& e) {
+        std::cout &lt;&lt; "Bad cast: " &lt;&lt; e.what() &lt;&lt; std::endl;
+    }
+
+    // Pointer casting (returns nullptr on failure)
+    if (auto* double_ptr = std::any_cast&lt;double&gt;(&value)) {
+        std::cout &lt;&lt; "Safe cast successful: " &lt;&lt; *double_ptr &lt;&lt; std::endl;
+    }
+}
+
+// Custom type erasure example
+class Drawable {
+private:
+    struct DrawableConcept {
+        virtual ~DrawableConcept() = default;
+        virtual void draw() const = 0;
+        virtual std::unique_ptr&lt;DrawableConcept&gt; clone() const = 0;
+    };
+
+    template&lt;typename T&gt;
+    struct DrawableModel : public DrawableConcept {
+        T object;
+
+        DrawableModel(T obj) : object(std::move(obj)) {}
+
+        void draw() const override {
+            object.draw(); // Calls T::draw()
+        }
+
+        std::unique_ptr&lt;DrawableConcept&gt; clone() const override {
+            return std::make_unique&lt;DrawableModel&gt;(object);
+        }
+    };
+
+    std::unique_ptr&lt;DrawableConcept&gt; object_;
+
+public:
+    template&lt;typename T&gt;
+    Drawable(T obj) : object_(std::make_unique&lt;DrawableModel&lt;T&gt;&gt;(std::move(obj))) {}
+
+    Drawable(const Drawable& other) : object_(other.object_-&gt;clone()) {}
+
+    Drawable& operator=(const Drawable& other) {
+        if (this != &other) {
+            object_ = other.object_-&gt;clone();
+        }
+        return *this;
+    }
+
+    Drawable(Drawable&&) = default;
+    Drawable& operator=(Drawable&&) = default;
+
+    void draw() const {
+        object_-&gt;draw();
+    }
+};
+
+// Example drawable types
+struct Circle {
+    int radius;
+    Circle(int r) : radius(r) {}
+    void draw() const {
+        std::cout &lt;&lt; "Drawing circle with radius " &lt;&lt; radius &lt;&lt; std::endl;
+    }
+};
+
+struct Square {
+    int side;
+    Square(int s) : side(s) {}
+    void draw() const {
+        std::cout &lt;&lt; "Drawing square with side " &lt;&lt; side &lt;&lt; std::endl;
+    }
+};
+
+void type_erasure_examples() {
+    std::vector&lt;Drawable&gt; shapes;
+
+    shapes.emplace_back(Circle{5});
+    shapes.emplace_back(Square{10});
+    shapes.emplace_back(Circle{3});
+
+    std::cout &lt;&lt; "Drawing all shapes:" &lt;&lt; std::endl;
+    for (const auto& shape : shapes) {
+        shape.draw();
+    }
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Compile-Time Strings and Consteval</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Advanced compile-time computation and immediate functions.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;array&gt;
+#include &lt;string_view&gt;
+
+// Compile-time string class
+template&lt;size_t N&gt;
+struct FixedString {
+    char data[N + 1] = {};
+
+    constexpr FixedString(const char (&str)[N + 1]) {
+        for (size_t i = 0; i &lt; N; ++i) {
+            data[i] = str[i];
+        }
+    }
+
+    constexpr const char* c_str() const { return data; }
+    constexpr size_t size() const { return N; }
+    constexpr char operator[](size_t i) const { return data[i]; }
+};
+
+// Deduction guide
+template&lt;size_t N&gt;
+FixedString(const char (&)[N]) -&gt; FixedString&lt;N - 1&gt;;
+
+// Compile-time string manipulation
+template&lt;FixedString str&gt;
+constexpr auto make_uppercase() {
+    FixedString&lt;str.size()&gt; result{};
+    for (size_t i = 0; i &lt; str.size(); ++i) {
+        char c = str[i];
+        if (c &gt;= 'a' && c &lt;= 'z') {
+            c = c - 'a' + 'A';
+        }
+        result.data[i] = c;
+    }
+    return result;
+}
+
+// Consteval function (C++20) - must be evaluated at compile time
+consteval int factorial(int n) {
+    if (n &lt; 0) {
+        throw std::invalid_argument("Negative factorial");
+    }
+    return n == 0 ? 1 : n * factorial(n - 1);
+}
+
+// Consteval vs constexpr
+constexpr int constexpr_func(int x) {
+    return x * x; // Can be evaluated at compile or runtime
+}
+
+consteval int consteval_func(int x) {
+    return x * x; // Must be evaluated at compile time
+}
+
+// Template with compile-time string
+template&lt;FixedString name&gt;
+class NamedType {
+public:
+    static constexpr const char* get_name() {
+        return name.c_str();
+    }
+
+    void print_name() const {
+        std::cout &lt;&lt; "Type name: " &lt;&lt; get_name() &lt;&lt; std::endl;
+    }
+};
+
+// Compile-time regex-like pattern matching
+constexpr bool match_pattern(std::string_view text, std::string_view pattern) {
+    if (pattern.empty()) return text.empty();
+    if (text.empty()) return false;
+
+    if (pattern[0] == '*') {
+        // Wildcard matching
+        for (size_t i = 0; i &lt;= text.size(); ++i) {
+            if (match_pattern(text.substr(i), pattern.substr(1))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    if (pattern[0] == '?' || pattern[0] == text[0]) {
+        return match_pattern(text.substr(1), pattern.substr(1));
+    }
+
+    return false;
+}
+
+void compile_time_features_examples() {
+    // Compile-time string usage
+    constexpr auto str = FixedString{"Hello, World!"};
+    constexpr auto upper_str = make_uppercase&lt;str&gt;();
+
+    std::cout &lt;&lt; "Original: " &lt;&lt; str.c_str() &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Uppercase: " &lt;&lt; upper_str.c_str() &lt;&lt; std::endl;
+
+    // Consteval usage
+    constexpr int fact5 = factorial(5); // Computed at compile time
+    std::cout &lt;&lt; "5! = " &lt;&lt; fact5 &lt;&lt; std::endl;
+
+    // Named types
+    NamedType&lt;FixedString{"Database"}> db_type;
+    NamedType&lt;FixedString{"Network"}> net_type;
+
+    db_type.print_name();
+    net_type.print_name();
+
+    // Compile-time pattern matching
+    constexpr bool matches1 = match_pattern("hello", "h*o");
+    constexpr bool matches2 = match_pattern("world", "w?rld");
+
+    std::cout &lt;&lt; "Pattern 'h*o' matches 'hello': " &lt;&lt; matches1 &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Pattern 'w?rld' matches 'world': " &lt;&lt; matches2 &lt;&lt; std::endl;
+
+    // Constexpr vs consteval demonstration
+    constexpr int compile_time_value = 10;
+    int runtime_value = 20;
+
+    // Both can use constexpr function
+    constexpr int result1 = constexpr_func(compile_time_value);
+    int result2 = constexpr_func(runtime_value);
+
+    // Only compile-time values can use consteval function
+    constexpr int result3 = consteval_func(compile_time_value);
+    // int result4 = consteval_func(runtime_value); // Error!
+
+    std::cout &lt;&lt; "Constexpr results: " &lt;&lt; result1 &lt;&lt; ", " &lt;&lt; result2 &lt;&lt; ", " &lt;&lt; result3 &lt;&lt; std::endl;
+}
+
+// Demonstration function that calls all examples
+void demonstrate_custom_types() {
+    std::cout &lt;&lt; "=== Enumeration Examples ===" &lt;&lt; std::endl;
+    basic_enum_usage();
+    enum_utilities_example();
+
+    std::cout &lt;&lt; "\n=== Variant Examples ===" &lt;&lt; std::endl;
+    variant_examples();
+    expression_tree_example();
+
+    std::cout &lt;&lt; "\n=== POD and Aggregate Examples ===" &lt;&lt; std::endl;
+    pod_and_aggregate_examples();
+    structured_bindings_examples();
+
+    std::cout &lt;&lt; "\n=== Template Metaprogramming Examples ===" &lt;&lt; std::endl;
+    type_traits_examples();
+    variadic_templates_examples();
+
+    std::cout &lt;&lt; "\n=== Concepts Examples ===" &lt;&lt; std::endl;
+    basic_concepts_examples();
+    advanced_concepts_examples();
+
+    std::cout &lt;&lt; "\n=== Type Erasure Examples ===" &lt;&lt; std::endl;
+    any_examples();
+    type_erasure_examples();
+
+    std::cout &lt;&lt; "\n=== Compile-Time Features Examples ===" &lt;&lt; std::endl;
+    compile_time_features_examples();
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

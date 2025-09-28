@@ -1,0 +1,540 @@
+<div id="deque-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::deque In-Depth</h2>
+    <p class="mb-4 text-gray-400">A double-ended queue that allows fast insertion and deletion at both ends. Unlike vector, it provides O(1) insertion/deletion at both front and back. Header: #include &lt;deque&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Characteristics:</strong> O(1) random access, O(1) insertion/deletion at both ends, O(n) insertion/deletion in middle, no iterator invalidation for push/pop operations at ends.</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                    <pre><code class="language-cpp">deque();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty deque.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;int&gt; d1; // Empty deque</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(2) Fill Constructor</h5>
+                    <pre><code class="language-cpp">deque( size_type count, const T&amp; value );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a deque with `count` copies of `value`.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;int&gt; d2(5, 42); // {42, 42, 42, 42, 42}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(3) Range Constructor</h5>
+                    <pre><code class="language-cpp">template&lt; class InputIt &gt;
+deque( InputIt first, InputIt last );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a deque from a range of elements.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; source = {1, 2, 3, 4, 5};
+std::deque&lt;int&gt; d3(source.begin(), source.end()); // {1, 2, 3, 4, 5}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(4) Initializer List Constructor</h5>
+                    <pre><code class="language-cpp">deque( std::initializer_list&lt;T&gt; init );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a deque from an initializer list. (Since C++11)</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;int&gt; d4 = {1, 2, 3, 4, 5}; // {1, 2, 3, 4, 5}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Element Access</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">operator[], at(), front(), back()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Various ways to access elements in the deque.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;int&gt; deq = {10, 20, 30, 40, 50};
+
+// Random access (same as vector)
+int val1 = deq[2];        // 30 (no bounds checking)
+int val2 = deq.at(2);     // 30 (with bounds checking)
+
+// Front and back access (unique to deque vs vector)
+int first = deq.front();  // 10
+int last = deq.back();    // 50
+
+// Modifying through references
+deq.front() = 15;         // {15, 20, 30, 40, 50}
+deq.back() = 55;          // {15, 20, 30, 40, 55}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Modifiers - Double-Ended Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">push_front(), push_back(), pop_front(), pop_back()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Efficient insertion and deletion at both ends - the key advantage of deque.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;int&gt; deq;
+
+// Adding elements at both ends
+deq.push_back(1);    // {1}
+deq.push_back(2);    // {1, 2}
+deq.push_front(0);   // {0, 1, 2}
+deq.push_front(-1);  // {-1, 0, 1, 2}
+
+std::cout &lt;&lt; "Size: " &lt;&lt; deq.size() &lt;&lt; std::endl; // 4
+
+// Removing elements from both ends
+deq.pop_front();     // {0, 1, 2}
+deq.pop_back();      // {0, 1}
+
+std::cout &lt;&lt; "Front: " &lt;&lt; deq.front() &lt;&lt; std::endl; // 0
+std::cout &lt;&lt; "Back: " &lt;&lt; deq.back() &lt;&lt; std::endl;   // 1</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">emplace_front(), emplace_back() (C++11)</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Construct elements in-place at both ends.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;std::string&gt; str_deq;
+
+str_deq.emplace_back("World");  // Constructs at back
+str_deq.emplace_front("Hello"); // Constructs at front
+// Result: {"Hello", "World"}
+
+// For complex objects
+std::deque&lt;std::pair&lt;int, std::string&gt;&gt; pair_deq;
+pair_deq.emplace_back(42, "Answer");    // Constructs pair at back
+pair_deq.emplace_front(0, "Zero");      // Constructs pair at front
+// Result: {(0, "Zero"), (42, "Answer")}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Modifiers - Middle Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">insert(), erase()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Insert and erase elements at arbitrary positions (O(n) complexity).</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;int&gt; deq = {1, 2, 4, 5};
+
+// Insert single element
+auto it = deq.begin() + 2;
+deq.insert(it, 3); // {1, 2, 3, 4, 5}
+
+// Insert multiple copies
+deq.insert(deq.begin(), 2, 0); // {0, 0, 1, 2, 3, 4, 5}
+
+// Insert range
+std::vector&lt;int&gt; to_insert = {10, 11};
+deq.insert(deq.end(), to_insert.begin(), to_insert.end());
+// {0, 0, 1, 2, 3, 4, 5, 10, 11}
+
+// Erase single element
+deq.erase(deq.begin()); // {0, 1, 2, 3, 4, 5, 10, 11}
+
+// Erase range
+deq.erase(deq.end() - 2, deq.end()); // {0, 1, 2, 3, 4, 5}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">assign(), clear(), resize()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Bulk operations for managing deque contents.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;int&gt; deq;
+
+// Assign values
+deq.assign(5, 100);  // {100, 100, 100, 100, 100}
+
+// Assign from range
+std::vector&lt;int&gt; source = {1, 2, 3};
+deq.assign(source.begin(), source.end()); // {1, 2, 3}
+
+// Resize
+deq.resize(5, 99);   // {1, 2, 3, 99, 99}
+deq.resize(2);       // {1, 2}
+
+// Clear all elements
+deq.clear();         // {}
+std::cout &lt;&lt; "Empty: " &lt;&lt; deq.empty() &lt;&lt; std::endl; // true</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Iterators</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Random Access Iterators</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Deque provides random access iterators like vector.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;int&gt; deq = {1, 2, 3, 4, 5};
+
+// Forward iteration
+for (auto it = deq.begin(); it != deq.end(); ++it) {
+    std::cout &lt;&lt; *it &lt;&lt; " ";
+}
+std::cout &lt;&lt; std::endl; // 1 2 3 4 5
+
+// Reverse iteration
+for (auto it = deq.rbegin(); it != deq.rend(); ++it) {
+    std::cout &lt;&lt; *it &lt;&lt; " ";
+}
+std::cout &lt;&lt; std::endl; // 5 4 3 2 1
+
+// Random access
+auto it = deq.begin();
+it += 2; // Jump to index 2
+std::cout &lt;&lt; *it &lt;&lt; std::endl; // 3
+
+// Range-based for loop (C++11)
+for (const auto& elem : deq) {
+    std::cout &lt;&lt; elem &lt;&lt; " ";
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Iterator Stability</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Understanding when iterators remain valid.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;int&gt; deq = {1, 2, 3, 4, 5};
+auto it = deq.begin() + 2; // Points to 3
+
+// Operations that DON'T invalidate iterators
+deq.push_front(0);   // Iterator still valid, points to same element
+deq.push_back(6);    // Iterator still valid
+deq.pop_front();     // Iterator still valid
+deq.pop_back();      // Iterator still valid
+
+std::cout &lt;&lt; *it &lt;&lt; std::endl; // Still 3
+
+// Operations that DO invalidate iterators
+deq.insert(deq.begin() + 1, 99); // All iterators invalidated
+deq.erase(deq.begin());           // All iterators invalidated
+// it is now invalid!</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Performance Comparison</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Deque vs Vector vs List</h5>
+                    <p class="text-gray-400 mt-2 mb-3">When to choose deque over other containers.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Operation Complexity Comparison:
+//                  deque    vector   list
+// Random Access:   O(1)     O(1)     O(n)
+// Front Insert:    O(1)     O(n)     O(1)
+// Back Insert:     O(1)     O(1)*    O(1)
+// Middle Insert:   O(n)     O(n)     O(1)**
+// Memory:          Chunks   Contiguous Nodes
+//
+// * Amortized O(1) for vector
+// ** O(1) if you have iterator to position
+
+// Example: Building a sequence with front and back operations
+auto benchmark_containers = []() {
+    const int N = 100000;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // Deque: Efficient for both ends
+    std::deque&lt;int&gt; deq;
+    for (int i = 0; i &lt; N; ++i) {
+        if (i % 2 == 0) {
+            deq.push_back(i);
+        } else {
+            deq.push_front(i);
+        }
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout &lt;&lt; "Deque time: "
+              &lt;&lt; std::chrono::duration_cast&lt;std::chrono::microseconds&gt;(end - start).count()
+              &lt;&lt; " microseconds" &lt;&lt; std::endl;
+
+    // Vector: Inefficient for front operations
+    start = std::chrono::high_resolution_clock::now();
+    std::vector&lt;int&gt; vec;
+    for (int i = 0; i &lt; N; ++i) {
+        if (i % 2 == 0) {
+            vec.push_back(i);
+        } else {
+            vec.insert(vec.begin(), i); // O(n) operation!
+        }
+    }
+    end = std::chrono::high_resolution_clock::now();
+    std::cout &lt;&lt; "Vector time: "
+              &lt;&lt; std::chrono::duration_cast&lt;std::chrono::microseconds&gt;(end - start).count()
+              &lt;&lt; " microseconds" &lt;&lt; std::endl;
+};</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Memory Layout</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Understanding deque's internal structure.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Deque Internal Structure:
+// - Not contiguous like vector
+// - Made of multiple fixed-size chunks/blocks
+// - Central map maintains pointers to these chunks
+// - Elements can be added at both ends without moving existing elements
+
+std::deque&lt;int&gt; deq;
+
+// Each push operation may allocate a new chunk
+for (int i = 0; i &lt; 1000; ++i) {
+    deq.push_back(i);
+}
+
+// No reallocation of existing elements (unlike vector)
+// Random access still O(1) through chunk indexing
+std::cout &lt;&lt; "Element 500: " &lt;&lt; deq[500] &lt;&lt; std::endl;
+
+// Memory efficiency considerations:
+// - More memory overhead than vector (chunk pointers)
+// - Less memory overhead than list (no per-element pointers)
+// - Good cache locality within chunks
+// - Some cache misses when crossing chunk boundaries</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Common Use Cases</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Sliding Window Maximum</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Using deque as a double-ended queue for window algorithms.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Find maximum in each sliding window of size k
+std::vector&lt;int&gt; slidingWindowMaximum(const std::vector&lt;int&gt;& nums, int k) {
+    std::deque&lt;int&gt; dq; // Stores indices
+    std::vector&lt;int&gt; result;
+
+    for (int i = 0; i &lt; nums.size(); ++i) {
+        // Remove indices outside current window
+        while (!dq.empty() && dq.front() &lt;= i - k) {
+            dq.pop_front();
+        }
+
+        // Remove indices of smaller elements from back
+        while (!dq.empty() && nums[dq.back()] &lt;= nums[i]) {
+            dq.pop_back();
+        }
+
+        dq.push_back(i);
+
+        // Window is complete
+        if (i &gt;= k - 1) {
+            result.push_back(nums[dq.front()]);
+        }
+    }
+
+    return result;
+}
+
+// Usage
+std::vector&lt;int&gt; arr = {1, 3, -1, -3, 5, 3, 6, 7};
+auto result = slidingWindowMaximum(arr, 3);
+// Result: {3, 3, 5, 5, 6, 7}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">BFS Implementation</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Using deque as a queue for breadth-first search.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Graph BFS using deque
+void bfs(const std::vector&lt;std::vector&lt;int&gt;&gt;& graph, int start) {
+    std::vector&lt;bool&gt; visited(graph.size(), false);
+    std::deque&lt;int&gt; queue;
+
+    queue.push_back(start);
+    visited[start] = true;
+
+    while (!queue.empty()) {
+        int node = queue.front();
+        queue.pop_front();
+
+        std::cout &lt;&lt; node &lt;&lt; " ";
+
+        // Add unvisited neighbors
+        for (int neighbor : graph[node]) {
+            if (!visited[neighbor]) {
+                visited[neighbor] = true;
+                queue.push_back(neighbor);
+            }
+        }
+    }
+    std::cout &lt;&lt; std::endl;
+}
+
+// 0-1 BFS (for graphs with edge weights 0 or 1)
+std::vector&lt;int&gt; shortestPath01BFS(const std::vector&lt;std::vector&lt;std::pair&lt;int, int&gt;&gt;&gt;& graph, int start) {
+    std::vector&lt;int&gt; dist(graph.size(), INT_MAX);
+    std::deque&lt;int&gt; dq;
+
+    dist[start] = 0;
+    dq.push_back(start);
+
+    while (!dq.empty()) {
+        int node = dq.front();
+        dq.pop_front();
+
+        for (auto [neighbor, weight] : graph[node]) {
+            int new_dist = dist[node] + weight;
+
+            if (new_dist &lt; dist[neighbor]) {
+                dist[neighbor] = new_dist;
+
+                // If weight is 0, add to front; if 1, add to back
+                if (weight == 0) {
+                    dq.push_front(neighbor);
+                } else {
+                    dq.push_back(neighbor);
+                }
+            }
+        }
+    }
+
+    return dist;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Undo/Redo with Size Limits</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Using deque for bounded history management.</p>
+                    <pre class="ml-4"><code class="language-cpp">template&lt;typename T&gt;
+class BoundedHistory {
+private:
+    std::deque&lt;T&gt; history;
+    size_t max_size;
+    size_t current_pos;
+
+public:
+    BoundedHistory(size_t max_size = 100) : max_size(max_size), current_pos(0) {}
+
+    void add_state(const T& state) {
+        // Remove any redo states
+        while (history.size() &gt; current_pos) {
+            history.pop_back();
+        }
+
+        // Add new state
+        history.push_back(state);
+        current_pos = history.size();
+
+        // Maintain size limit
+        while (history.size() &gt; max_size) {
+            history.pop_front();
+            if (current_pos &gt; 0) current_pos--;
+        }
+    }
+
+    bool can_undo() const {
+        return current_pos &gt; 1;
+    }
+
+    bool can_redo() const {
+        return current_pos &lt; history.size();
+    }
+
+    const T& undo() {
+        if (can_undo()) {
+            current_pos--;
+        }
+        return history[current_pos - 1];
+    }
+
+    const T& redo() {
+        if (can_redo()) {
+            current_pos++;
+        }
+        return history[current_pos - 1];
+    }
+
+    const T& current_state() const {
+        return history[current_pos - 1];
+    }
+};
+
+// Usage
+BoundedHistory&lt;std::string&gt; editor_history(10);
+editor_history.add_state("Hello");
+editor_history.add_state("Hello World");
+editor_history.add_state("Hello World!");
+
+std::cout &lt;&lt; editor_history.undo() &lt;&lt; std::endl;        // "Hello World"
+std::cout &lt;&lt; editor_history.redo() &lt;&lt; std::endl;        // "Hello World!"</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Best Practices</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">When to Choose Deque</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Guidelines for selecting deque over other containers.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Choose deque when:
+// 1. You need O(1) insertion/deletion at both ends
+// 2. You need random access to elements
+// 3. You don't need guaranteed contiguous memory
+// 4. Iterator invalidation on front/back operations is acceptable
+
+// Good for deque:
+void process_stream() {
+    std::deque&lt;Task&gt; task_queue;
+
+    // Producer adds tasks at back
+    task_queue.push_back(Task("High Priority"));
+
+    // Consumer processes from front, but can also add urgent tasks at front
+    if (urgent_condition) {
+        task_queue.push_front(Task("Urgent"));
+    }
+
+    Task current_task = task_queue.front();
+    task_queue.pop_front();
+}
+
+// Better to use vector when:
+// - You only insert/delete at the back
+// - You need guaranteed contiguous memory (for C APIs)
+// - You're doing lots of random access
+
+// Better to use list when:
+// - You frequently insert/delete in the middle
+// - You need stable iterators
+// - Random access is not needed</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Efficient Operations</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Maximizing deque performance.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::deque&lt;std::string&gt; deq;
+
+// Prefer emplace over push for complex objects
+deq.emplace_back("Hello", 5); // More efficient
+// vs
+// deq.push_back(std::string("Hello", 5)); // Less efficient
+
+// Use shrink_to_fit() to reduce memory usage after many deletions
+deq.shrink_to_fit();
+
+// For bulk operations, prefer assign over multiple push operations
+std::vector&lt;int&gt; data(1000, 42);
+deq.assign(data.begin(), data.end()); // Better
+// vs
+// for (const auto& item : data) deq.push_back(item); // Worse
+
+// Reserve space if you know approximate size (not available for deque)
+// This is one advantage vector has over deque
+
+// Be aware of the trade-offs
+void demonstrate_tradeoffs() {
+    // Memory overhead comparison
+    std::vector&lt;int&gt; vec(1000000);     // Lower memory overhead
+    std::deque&lt;int&gt; deq(1000000);      // Higher memory overhead
+
+    // Cache performance
+    // Vector: Better cache locality for sequential access
+    // Deque: Good within chunks, some misses at boundaries
+
+    // Reallocation
+    // Vector: May reallocate entire container
+    // Deque: Never reallocates existing elements
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

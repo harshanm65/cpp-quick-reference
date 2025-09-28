@@ -1,0 +1,489 @@
+<div id="priority_queue-content" class="tab-content">
+    <h2 class="text-3xl font-bold mb-4 text-cyan-300">std::priority_queue In-Depth</h2>
+    <p class="mb-4 text-gray-400">A container adapter that provides constant time lookup of the largest (or smallest) element. Built on top of a heap data structure, it maintains elements in sorted order with efficient insertion and removal. Header: #include &lt;queue&gt;</p>
+    <p class="mb-6 text-gray-400"><strong>Key Performance Characteristics:</strong> O(1) top access, O(log n) insertion and removal, heap-based implementation using a vector by default. Max-heap by default, customizable with comparators.</p>
+
+    <div class="space-y-12">
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Constructors</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(1) Default Constructor</h5>
+                    <pre><code class="language-cpp">priority_queue();</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates an empty max-heap priority queue.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::priority_queue&lt;int&gt; pq; // Empty max-heap</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(2) Custom Comparator Constructor</h5>
+                    <pre><code class="language-cpp">priority_queue( const Compare&amp; comp );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a priority queue with custom comparison function.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Min-heap using greater comparator
+std::priority_queue&lt;int, std::vector&lt;int&gt;, std::greater&lt;int&gt;&gt; min_pq;
+
+// Custom comparator for structs
+struct Person {
+    std::string name;
+    int age;
+};
+
+auto comp = [](const Person&amp; a, const Person&amp; b) {
+    return a.age < b.age; // Priority by age (older first)
+};
+std::priority_queue&lt;Person, std::vector&lt;Person&gt;, decltype(comp)&gt; person_pq(comp);</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(3) Range Constructor</h5>
+                    <pre><code class="language-cpp">template&lt; class InputIt &gt;
+priority_queue( InputIt first, InputIt last );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a priority queue from a range of elements.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; data = {3, 1, 4, 1, 5, 9, 2, 6};
+std::priority_queue&lt;int&gt; pq(data.begin(), data.end());
+// Automatically heapifies the input range</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">(4) Initializer List Constructor</h5>
+                    <pre><code class="language-cpp">priority_queue( std::initializer_list&lt;T&gt; init );</code></pre>
+                    <p class="text-gray-400 mt-2 mb-3">Creates a priority queue from an initializer list. (Since C++11)</p>
+                    <pre class="ml-4"><code class="language-cpp">std::priority_queue&lt;int&gt; pq = {3, 1, 4, 1, 5, 9, 2, 6};
+// Max element (9) will be at top</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Basic Operations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">push(), emplace()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Insert elements into the priority queue. O(log n) complexity.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::priority_queue&lt;int&gt; pq;
+
+pq.push(3);
+pq.push(1);
+pq.push(4);
+pq.push(1);
+pq.push(5);
+
+// Using emplace for in-place construction
+std::priority_queue&lt;std::string&gt; str_pq;
+str_pq.emplace("hello");     // Constructs string in-place
+str_pq.emplace(5, 'a');      // Constructs "aaaaa" in-place</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">top()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Access the top element (highest priority). O(1) complexity.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::priority_queue&lt;int&gt; pq = {3, 1, 4, 1, 5, 9, 2, 6};
+
+int max_element = pq.top(); // 9 (for max-heap)
+
+// Be careful: top() on empty queue is undefined behavior
+if (!pq.empty()) {
+    int safe_top = pq.top();
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">pop()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Remove the top element. O(log n) complexity. Does not return the removed element.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::priority_queue&lt;int&gt; pq = {3, 1, 4, 1, 5, 9, 2, 6};
+
+while (!pq.empty()) {
+    int top_element = pq.top(); // Get the element first
+    std::cout &lt;&lt; top_element &lt;&lt; " ";
+    pq.pop();                   // Then remove it
+}
+// Output: 9 6 5 4 3 2 1 1</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">size(), empty()</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Query the size and emptiness of the priority queue.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::priority_queue&lt;int&gt; pq = {1, 2, 3};
+
+std::cout &lt;&lt; "Size: " &lt;&lt; pq.size() &lt;&lt; std::endl;   // 3
+std::cout &lt;&lt; "Empty: " &lt;&lt; pq.empty() &lt;&lt; std::endl; // false
+
+pq.pop();
+pq.pop();
+pq.pop();
+
+std::cout &lt;&lt; "Empty: " &lt;&lt; pq.empty() &lt;&lt; std::endl; // true</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Custom Comparators</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Min-Heap Implementation</h5>
+                    <p class="text-gray-400 mt-2 mb-3">By default, priority_queue is a max-heap. For min-heap, use std::greater.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Min-heap: smallest element has highest priority
+std::priority_queue&lt;int, std::vector&lt;int&gt;, std::greater&lt;int&gt;&gt; min_pq;
+
+min_pq.push(3);
+min_pq.push(1);
+min_pq.push(4);
+min_pq.push(1);
+min_pq.push(5);
+
+while (!min_pq.empty()) {
+    std::cout &lt;&lt; min_pq.top() &lt;&lt; " ";
+    min_pq.pop();
+}
+// Output: 1 1 3 4 5</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Custom Comparator for Objects</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Define custom comparison for user-defined types.</p>
+                    <pre class="ml-4"><code class="language-cpp">struct Task {
+    std::string name;
+    int priority;
+    int deadline;
+};
+
+// Comparator: higher priority number = higher priority
+// If same priority, earlier deadline = higher priority
+struct TaskComparator {
+    bool operator()(const Task&amp; a, const Task&amp; b) const {
+        if (a.priority != b.priority) {
+            return a.priority < b.priority; // Lower priority number = lower priority
+        }
+        return a.deadline > b.deadline; // Later deadline = lower priority
+    }
+};
+
+std::priority_queue&lt;Task, std::vector&lt;Task&gt;, TaskComparator&gt; task_queue;
+
+task_queue.push({"Task A", 1, 100});
+task_queue.push({"Task B", 3, 50});
+task_queue.push({"Task C", 2, 75});
+task_queue.push({"Task D", 3, 40});
+
+while (!task_queue.empty()) {
+    const auto&amp; task = task_queue.top();
+    std::cout &lt;&lt; task.name &lt;&lt; " (priority: " &lt;&lt; task.priority
+              &lt;&lt; ", deadline: " &lt;&lt; task.deadline &lt;&lt; ")\n";
+    task_queue.pop();
+}
+// Output: Task D, Task B, Task C, Task A</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Lambda Comparator</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Using lambda functions for inline comparison logic.</p>
+                    <pre class="ml-4"><code class="language-cpp">// Priority queue for pairs: first by second element (descending), then by first element (ascending)
+auto comp = [](const std::pair&lt;int, int&gt;&amp; a, const std::pair&lt;int, int&gt;&amp; b) {
+    if (a.second != b.second) {
+        return a.second < b.second; // Higher second element = higher priority
+    }
+    return a.first > b.first; // Lower first element = higher priority
+};
+
+std::priority_queue&lt;std::pair&lt;int, int&gt;, std::vector&lt;std::pair&lt;int, int&gt;&gt;, decltype(comp)&gt; pq(comp);
+
+pq.push({1, 10});
+pq.push({2, 20});
+pq.push({3, 10});
+pq.push({4, 20});
+
+while (!pq.empty()) {
+    auto p = pq.top();
+    std::cout &lt;&lt; "(" &lt;&lt; p.first &lt;&lt; ", " &lt;&lt; p.second &lt;&lt; ") ";
+    pq.pop();
+}
+// Output: (2, 20) (4, 20) (1, 10) (3, 10)</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-2xl font-semibold mt-6 mb-4 text-cyan-200">Algorithm Implementations</h3>
+            <div class="space-y-8 mt-6">
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Dijkstra's Shortest Path Algorithm</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Classic use case for priority queues in graph algorithms.</p>
+                    <pre class="ml-4"><code class="language-cpp">#include &lt;vector&gt;
+#include &lt;queue&gt;
+#include &lt;limits&gt;
+
+using Graph = std::vector&lt;std::vector&lt;std::pair&lt;int, int&gt;&gt;&gt;; // adjacency list: {neighbor, weight}
+
+std::vector&lt;int&gt; dijkstra(const Graph&amp; graph, int start) {
+    int n = graph.size();
+    std::vector&lt;int&gt; dist(n, std::numeric_limits&lt;int&gt;::max());
+
+    // Min-heap: {distance, vertex}
+    std::priority_queue&lt;std::pair&lt;int, int&gt;,
+                       std::vector&lt;std::pair&lt;int, int&gt;&gt;,
+                       std::greater&lt;std::pair&lt;int, int&gt;&gt;&gt; pq;
+
+    dist[start] = 0;
+    pq.push({0, start});
+
+    while (!pq.empty()) {
+        auto [d, u] = pq.top();
+        pq.pop();
+
+        if (d > dist[u]) continue; // Skip outdated entries
+
+        for (auto [v, weight] : graph[u]) {
+            if (dist[u] + weight < dist[v]) {
+                dist[v] = dist[u] + weight;
+                pq.push({dist[v], v});
+            }
+        }
+    }
+
+    return dist;
+}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">K Largest Elements</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Finding k largest elements efficiently using a min-heap.</p>
+                    <pre class="ml-4"><code class="language-cpp">std::vector&lt;int&gt; k_largest_elements(const std::vector&lt;int&gt;&amp; arr, int k) {
+    // Use min-heap to keep track of k largest elements
+    std::priority_queue&lt;int, std::vector&lt;int&gt;, std::greater&lt;int&gt;&gt; min_pq;
+
+    for (int num : arr) {
+        if (min_pq.size() < k) {
+            min_pq.push(num);
+        } else if (num > min_pq.top()) {
+            min_pq.pop();
+            min_pq.push(num);
+        }
+    }
+
+    std::vector&lt;int&gt; result;
+    while (!min_pq.empty()) {
+        result.push_back(min_pq.top());
+        min_pq.pop();
+    }
+
+    std::reverse(result.begin(), result.end()); // Largest to smallest
+    return result;
+}
+
+// Usage
+std::vector&lt;int&gt; arr = {3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5};
+auto largest_3 = k_largest_elements(arr, 3); // {9, 6, 5}</code></pre>
+                </div>
+
+                <div>
+                    <h5 class="font-mono text-md text-green-300">Merge K Sorted Arrays</h5>
+                    <p class="text-gray-400 mt-2 mb-3">Efficiently merge multiple sorted arrays using priority queue.</p>
+                    <pre class="ml-4"><code class="language-cpp">struct ArrayElement {
+    int value;
+    int array_index;
+    int element_index;
+
+    bool operator>(const ArrayElement&amp; other) const {
+        return value > other.value; // Min-heap based on value
+    }
+};
+
+std::vector&lt;int&gt; merge_k_sorted_arrays(const std::vector&lt;std::vector&lt;int&gt;&gt;&amp; arrays) {
+    std::priority_queue&lt;ArrayElement, std::vector&lt;ArrayElement&gt;, std::greater&lt;ArrayElement&gt;&gt; pq;
+
+    // Initialize heap with first element from each array
+    for (int i = 0; i < arrays.size(); ++i) {
+        if (!arrays[i].empty()) {
+            pq.push({arrays[i][0], i, 0});
+        }
+    }
+
+    std::vector&lt;int&gt; result;
+
+    while (!pq.empty()) {
+        auto elem = pq.top();
+        pq.pop();
+
+        result.push_back(elem.value);
+
+        // Add next element from the same array
+        if (elem.element_index + 1 < arrays[elem.array_index].size()) {
+            pq.push({
+                arrays[elem.array_index][elem.element_index + 1],
+                elem.array_index,
+                elem.element_index + 1
+            });
+        }
+    }
+
+    return result;
+}
+
+// Usage
+std::vector&lt;std::vector&lt;int&gt;&gt; arrays = {
+    {1, 4, 7},
+    {2, 5, 8},
+    {3, 6, 9}
+};
+auto merged = merge_k_sorted_arrays(arrays); // {1, 2, 3, 4, 5, 6, 7, 8, 9}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="text-2xl font-semibold mt-8 mb-4 text-cyan-200">Common std::priority_queue Patterns</h3>
+    <div class="space-y-4">
+        <details>
+            <summary class="font-semibold text-lg">1. Sliding Window Maximum</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Find maximum in all sliding windows of size k efficiently.</p>
+                <pre><code class="language-cpp">std::vector&lt;int&gt; sliding_window_maximum(const std::vector&lt;int&gt;&amp; nums, int k) {
+    std::priority_queue&lt;std::pair&lt;int, int&gt;&gt; pq; // {value, index}
+    std::vector&lt;int&gt; result;
+
+    for (int i = 0; i < nums.size(); ++i) {
+        pq.push({nums[i], i});
+
+        // Remove elements outside current window
+        while (!pq.empty() && pq.top().second <= i - k) {
+            pq.pop();
+        }
+
+        // Window is complete
+        if (i >= k - 1) {
+            result.push_back(pq.top().first);
+        }
+    }
+
+    return result;
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">2. Median from Data Stream</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Maintain running median using two heaps.</p>
+                <pre><code class="language-cpp">class MedianFinder {
+private:
+    std::priority_queue&lt;int&gt; max_heap; // For smaller half
+    std::priority_queue&lt;int, std::vector&lt;int&gt;, std::greater&lt;int&gt;&gt; min_heap; // For larger half
+
+public:
+    void addNum(int num) {
+        if (max_heap.empty() || num <= max_heap.top()) {
+            max_heap.push(num);
+        } else {
+            min_heap.push(num);
+        }
+
+        // Balance heaps
+        if (max_heap.size() > min_heap.size() + 1) {
+            min_heap.push(max_heap.top());
+            max_heap.pop();
+        } else if (min_heap.size() > max_heap.size() + 1) {
+            max_heap.push(min_heap.top());
+            min_heap.pop();
+        }
+    }
+
+    double findMedian() {
+        if (max_heap.size() == min_heap.size()) {
+            return (max_heap.top() + min_heap.top()) / 2.0;
+        }
+        return max_heap.size() > min_heap.size() ? max_heap.top() : min_heap.top();
+    }
+};</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">3. Top K Frequent Elements</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Find k most frequent elements in an array.</p>
+                <pre><code class="language-cpp">std::vector&lt;int&gt; top_k_frequent(const std::vector&lt;int&gt;&amp; nums, int k) {
+    std::unordered_map&lt;int, int&gt; freq;
+    for (int num : nums) {
+        freq[num]++;
+    }
+
+    // Min-heap based on frequency
+    auto comp = [](const std::pair&lt;int, int&gt;&amp; a, const std::pair&lt;int, int&gt;&amp; b) {
+        return a.second > b.second;
+    };
+    std::priority_queue&lt;std::pair&lt;int, int&gt;, std::vector&lt;std::pair&lt;int, int&gt;&gt;, decltype(comp)&gt; pq(comp);
+
+    for (auto&amp; p : freq) {
+        pq.push(p);
+        if (pq.size() > k) {
+            pq.pop();
+        }
+    }
+
+    std::vector&lt;int&gt; result;
+    while (!pq.empty()) {
+        result.push_back(pq.top().first);
+        pq.pop();
+    }
+
+    return result;
+}</code></pre>
+            </div>
+        </details>
+
+        <details>
+            <summary class="font-semibold text-lg">4. CPU Scheduling Simulation</summary>
+            <div>
+                <p class="text-gray-400 mb-3">Simulate priority-based CPU scheduling.</p>
+                <pre><code class="language-cpp">struct Process {
+    int id;
+    int priority;
+    int burst_time;
+    int arrival_time;
+
+    bool operator<(const Process&amp; other) const {
+        if (priority != other.priority) {
+            return priority < other.priority; // Higher priority number = higher priority
+        }
+        return arrival_time > other.arrival_time; // Earlier arrival = higher priority
+    }
+};
+
+void simulate_cpu_scheduling(std::vector&lt;Process&gt; processes) {
+    std::priority_queue&lt;Process&gt; ready_queue;
+    int current_time = 0;
+
+    std::sort(processes.begin(), processes.end(),
+              [](const Process&amp; a, const Process&amp; b) {
+                  return a.arrival_time < b.arrival_time;
+              });
+
+    int process_index = 0;
+
+    while (process_index < processes.size() || !ready_queue.empty()) {
+        // Add arrived processes to ready queue
+        while (process_index < processes.size() &&
+               processes[process_index].arrival_time <= current_time) {
+            ready_queue.push(processes[process_index]);
+            process_index++;
+        }
+
+        if (!ready_queue.empty()) {
+            Process current_process = ready_queue.top();
+            ready_queue.pop();
+
+            std::cout << "Time " << current_time << ": Running process "
+                      << current_process.id << " (priority "
+                      << current_process.priority << ")\n";
+
+            current_time += current_process.burst_time;
+        } else {
+            // No process ready, advance time
+            current_time = processes[process_index].arrival_time;
+        }
+    }
+}</code></pre>
+            </div>
+        </details>
+    </div>
+</div>

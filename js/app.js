@@ -6,6 +6,7 @@ class CPPGuideApp {
         this.tocContainer = null;
         this.scrollTimer = null;
         this.activeSection = null;
+        this.tooltipManager = window.TooltipManager ? new window.TooltipManager() : null;
         this.tabsConfig = [
             { id: 'string', label: 'std::string', file: 'string.html' },
             { id: 'stringstream', label: 'std::stringstream', file: 'stringstream.html' },
@@ -86,6 +87,9 @@ class CPPGuideApp {
 
             // Highlight syntax
             this.highlightSyntax();
+
+            // Apply post-render enhancements (tooltips, badges, etc.)
+            this.applyEnhancements();
 
             // Generate TOC for the new content
             this.generateTOC();
@@ -182,6 +186,18 @@ class CPPGuideApp {
         // Re-highlight all code blocks
         if (window.Prism) {
             window.Prism.highlightAll();
+        }
+    }
+
+    applyEnhancements() {
+        const contentContainer = document.getElementById('content-container');
+        if (!contentContainer) return;
+
+        const tabContent = contentContainer.querySelector('.tab-content');
+        const enhancementRoot = tabContent || contentContainer;
+
+        if (this.tooltipManager && typeof this.tooltipManager.decorate === 'function') {
+            this.tooltipManager.decorate(enhancementRoot);
         }
     }
 

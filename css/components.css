@@ -557,3 +557,82 @@ html {
         padding-left: 1.6rem;
     }
 }
+/* Tooltip glossary */
+.tooltip-term {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: help;
+    border-bottom: 1px dotted var(--color-primary);
+    color: inherit;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.tooltip-term:hover,
+.tooltip-term:focus {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-accent);
+}
+
+.tooltip-term:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.tooltip-term--code {
+    border-bottom-color: rgba(255, 255, 255, 0.4);
+}
+
+.tooltip-popover {
+    position: fixed;
+    z-index: 9999;
+    max-width: 340px;
+    background-color: var(--color-surface-light);
+    border: 1px solid rgba(34, 211, 238, 0.6);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity var(--transition-normal), transform var(--transition-normal);
+    pointer-events: none;
+    color: var(--color-text);
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
+.tooltip-popover.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.tooltip-popover .tooltip-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--color-primary);
+}
+
+.tooltip-popover .tooltip-body p {
+    margin: 0;
+    color: var(--color-text);
+}
+
+.tooltip-popover .tooltip-body p + p {
+    margin-top: 0.5rem;
+}
+
+.tooltip-popover pre {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background-color: rgba(17, 24, 39, 0.65);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    font-size: 0.75rem;
+    overflow: auto;
+}
+
+.tooltip-popover code {
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 0.75rem;
+}
